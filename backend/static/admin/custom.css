@@ -1,0 +1,130 @@
+html[data-theme="light"],
+:root {
+  --primary: #0d6efd;
+  --secondary: #212529;
+  --accent: #95bfff;
+  --primary-fg: #fff;
+
+  --body-fg: #333;
+  --body-bg: #fff;
+  --body-quiet-color: #666;
+  --body-medium-color: #444;
+  --body-loud-color: #000;
+
+  --header-color: #fff;
+  --header-branding-color: var(--accent);
+  --header-bg: var(--secondary);
+  --header-link-color: var(--primary-fg);
+
+  --breadcrumbs-fg: #c4dce8;
+  --breadcrumbs-link-fg: var(--body-bg);
+  --breadcrumbs-bg: #343a40;
+
+  --link-fg: #0d6efd;
+  --link-hover-color: #0058dc;
+  --link-selected-fg: var(--secondary);
+
+  --hairline-color: #e8e8e8;
+  --border-color: #ccc;
+
+  --error-fg: #ba2121;
+
+  --message-debug-bg: #efefef;
+  --message-debug-icon: url(../img/icon-debug.svg);
+  --message-info-bg: #ccefff;
+  --message-info-icon: url(../img/icon-info.svg);
+  --message-success-bg: #dfd;
+  --message-success-icon: url(../img/icon-yes.svg);
+  --message-warning-bg: #ffc;
+  --message-warning-icon: url(../img/icon-alert.svg);
+  --message-error-bg: #ffefef;
+  --message-error-icon: url(../img/icon-no.svg);
+
+  --darkened-bg: #f8f8f8; /* A bit darker than --body-bg */
+  --selected-bg: #e4e4e4; /* E.g. selected table cells */
+  --selected-row: #e3eeff;
+
+  --button-fg: #fff;
+  --button-bg: var(--secondary);
+  --button-hover-bg: #0d6efd;
+  --default-button-bg: #0d6efd;
+  --default-button-hover-bg: var(--secondary);
+  --close-button-bg: #747474;
+  --close-button-hover-bg: #333;
+  --delete-button-bg: #ba2121;
+  --delete-button-hover-bg: #a41515;
+
+  --object-tools-fg: var(--button-fg);
+  --object-tools-bg: var(--close-button-bg);
+  --object-tools-hover-bg: var(--close-button-hover-bg);
+
+  --font-family-primary: "SUIT", "Segoe UI", system-ui, Roboto, "Helvetica Neue",
+    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+  --font-family-monospace: ui-monospace, Menlo, Monaco, "Cascadia Mono",
+    "Segoe UI Mono", "Roboto Mono", "Oxygen Mono", "Ubuntu Monospace",
+    "Source Code Pro", "Fira Mono", "Droid Sans Mono", "Courier New", monospace,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  --primary: #264b5d;
+  --primary-fg: #f7f7f7;
+  --body-fg: #eeeeee;
+  --body-bg: #121212;
+  --body-quiet-color: #d0d0d0;
+  --body-medium-color: #e0e0e0;
+  --body-loud-color: #ffffff;
+  --breadcrumbs-link-fg: #e0e0e0;
+  --breadcrumbs-bg: #343a40;
+  --link-fg: #81d4fa;
+  --link-hover-color: #4ac1f7;
+  --link-selected-fg: #6f94c6;
+  --hairline-color: #272727;
+  --border-color: #353535;
+  --error-fg: #e35f5f;
+  --message-debug-bg: #4e4e4e;
+  --message-debug-icon: url(../img/icon-debug-dark.svg);
+  --message-info-bg: #265895;
+  --message-info-icon: url(../img/icon-info-dark.svg);
+  --message-success-bg: #006b1b;
+  --message-success-icon: url(../img/icon-yes-dark.svg);
+  --message-warning-bg: #583305;
+  --message-warning-icon: url(../img/icon-alert-dark.svg);
+  --message-error-bg: #570808;
+  --message-error-icon: url(../img/icon-no-dark.svg);
+  --darkened-bg: #212121;
+  --selected-bg: #1b1b1b;
+  --selected-row: #1c314b;
+  --close-button-bg: #333333;
+  --close-button-hover-bg: #666666;
+  color-scheme: dark;
+}
+
+html,
+body {
+  font-family: "SUIT", sans-serif;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-size: 0.875rem;
+  font-family: var(--font-family-primary);
+  color: var(--body-fg);
+  background: var(--body-bg);
+}
+
+#site-name a:link,
+#site-name a:visited {
+  color: white;
+}
+
+.module h2,
+.module caption,
+.inline-group h2 {
+  background: var(--breadcrumbs-bg);
+}

@@ -1,0 +1,38 @@
+/* StepIndicator, 버튼 등 */
+
+/* StepIndicator */
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.step-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #bbb;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  background-color: white;
+}
+
+.step-circle.active {
+  background-color: #333;
+  color: white;
+  border-color: #333;
+}
+
+.step-line {
+  width: 60px;
+  height: 1px;
+  background-color: #bbb;
+}

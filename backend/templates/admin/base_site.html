@@ -1,0 +1,18 @@
+{% extends "admin/base.html" %}
+{% load static %}
+{% block title %}
+  Festival Admin
+{% endblock title %}
+{% block branding %}
+  <h1 id="site-name">
+    <a href="{% url 'admin:index' %}">짐픽 Admin</a>
+  </h1>
+{% endblock branding %}
+{% block nav-global %}
+{% endblock nav-global %}
+{% block extrahead %}
+  {{ block.super }}
+  <link href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT@2/fonts/static/woff2/SUIT.css"
+        rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'admin/custom.css' %}">
+{% endblock extrahead %}
