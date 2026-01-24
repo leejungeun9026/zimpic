@@ -1,0 +1,3 @@
+floor_from,floor_to,per_floor_amount,is_active
+2,19,15000,TRUE
+20,99,35000,TRUE
