@@ -91,7 +91,7 @@ class FurnitureRotationAdmin(admin.ModelAdmin):
     "furniture__name_en",
   )
 
-  ordering = ("furniture", "orientation_code")
+  ordering = ("id",)
 
 
 
@@ -167,10 +167,10 @@ class BasePriceAdmin(admin.ModelAdmin):
 class LadderFeeRuleAdmin(admin.ModelAdmin):
   list_display = (
     "id",
-    "ladder_truck_group", 
-    "floor_from", 
-    "floor_to", 
-    "base_amount", 
+    "ladder_truck_group",
+    "floor_from",
+    "floor_to",
+    "base_amount",
     "is_active"
   )
   list_filter = ("ladder_truck_group", "is_active")
@@ -181,9 +181,9 @@ class LadderFeeRuleAdmin(admin.ModelAdmin):
 class StairsFeeRuleAdmin(admin.ModelAdmin):
   list_display = (
     "id",
-    "floor_from", 
-    "floor_to", 
-    "per_floor_amount", 
+    "floor_from",
+    "floor_to",
+    "per_floor_amount",
     "is_active"
   )
   list_filter = ("is_active",)
@@ -194,10 +194,10 @@ class StairsFeeRuleAdmin(admin.ModelAdmin):
 class DistanceFeeRuleAdmin(admin.ModelAdmin):
   list_display = (
     "id",
-    "truck_type", 
-    "base_km", 
-    "unit_km", 
-    "per_unit_amount", 
+    "truck_type",
+    "base_km",
+    "unit_km",
+    "per_unit_amount",
     "is_active"
   )
   list_filter = ("truck_type", "is_active")
@@ -209,9 +209,9 @@ class SpecialItemFeeAdmin(admin.ModelAdmin):
   list_display = (
     "id",
     "furniture__id",
-    "furniture__name_en", 
-    "description", 
-    "unit_amount", 
+    "furniture__name_en",
+    "description",
+    "unit_amount",
     "is_active"
   )
   list_filter = ("is_active",)

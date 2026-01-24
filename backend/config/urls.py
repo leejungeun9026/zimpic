@@ -39,8 +39,16 @@ schema_view = get_schema_view(
 urlpatterns = [
 	path("admin/", admin.site.urls),
     path("api/", include("rest_framework.urls")),
-    path("api/", include("example.urls")),
+    # path("api/", include("example.urls")),
+    path("api/", include("vision.urls")),
+    path("api/", include("estimates.urls")),
 ]
+
+# Django는 기본적으로 media/ 파일을 서빙하지 않음
+# 개발 환경(DEBUG=True)에서 업로드한 이미지 파일을
+# 브라우저에서 바로 확인할 수 있도록 media URL을 매핑
+if settings.DEBUG:
+  urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Swagger / Redoc
 urlpatterns += [

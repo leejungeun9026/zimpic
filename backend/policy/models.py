@@ -42,7 +42,7 @@ class Furniture(models.Model):
   가구/가전 데이터
   """
   category = models.CharField(max_length=20, choices=FurnitureCategory.choices)
-  
+
   yolo_id = models.IntegerField(null=True, blank=True, unique=True)
 
   name_en = models.CharField(max_length=64, unique=True)  # snake_case 내부 키
@@ -77,6 +77,7 @@ class Furniture(models.Model):
   )
 
   class Meta:
+    db_table = "furniture"
     verbose_name = "가구"
     verbose_name_plural = "1. 가구 목록"
     indexes = [
@@ -103,6 +104,7 @@ class FurnitureRotation(models.Model):
   note = models.CharField(max_length=100, null=True, blank=True)
 
   class Meta:
+    db_table = "furniture_rotation"
     verbose_name = "가구 회전"
     verbose_name_plural = "2. 가구 회전 목록"
     constraints = [
@@ -144,6 +146,7 @@ class BoxRule(models.Model):
   is_active = models.BooleanField(default=True)
 
   class Meta:
+    db_table = "policy_box_rule"
     verbose_name = "평수별 박스 개수"
     verbose_name_plural = "3. 평수별 박스 개수 목록"
     ordering = ("area_min_py",)
@@ -196,6 +199,7 @@ class TruckSpec(models.Model):
   is_active = models.BooleanField(default=True)
 
   class Meta:
+    db_table = "policy_truck_spec"
     verbose_name = "트럭 적재함 스펙"
     verbose_name_plural = "4. 트럭 적재함 스펙 목록"
     indexes = [
@@ -205,7 +209,7 @@ class TruckSpec(models.Model):
 
   def __str__(self):
     return f"{self.name}({self.truck_type}) {self.inner_width_cm}x{self.inner_length_cm}x{self.inner_height_cm}cm"
-  
+
 
 
 class BasePrice(models.Model):
@@ -217,14 +221,15 @@ class BasePrice(models.Model):
   base_amount = models.PositiveIntegerField(validators=[MinValueValidator(0)])
   included_workers = models.PositiveSmallIntegerField(default=0)
   note = models.CharField(
-    max_length=200, 
-    blank=True, 
+    max_length=200,
+    blank=True,
     default="",
     help_text="기준 인원 작성 (예: 남5+여2)",)
 
   is_active = models.BooleanField(default=True)
 
   class Meta:
+    db_table = "policy_base_price"
     verbose_name = "기본 요금"
     verbose_name_plural = "5. 기본 요금 목록"
     unique_together = [("move_type", "truck_type")]
@@ -250,6 +255,7 @@ class LadderFeeRule(models.Model):
   is_active = models.BooleanField(default=True)
 
   class Meta:
+    db_table = "policy_ladder_fee_rule"
     verbose_name = "사다리차 요금"
     verbose_name_plural = "6. 사다리차 요금 목록"
     unique_together = [("ladder_truck_group", "floor_from", "floor_to")]
@@ -273,6 +279,7 @@ class StairsFeeRule(models.Model):
   is_active = models.BooleanField(default=True)
 
   class Meta:
+    db_table = "policy_stairs_fee_rule"
     verbose_name = "계단 요금"
     verbose_name_plural = "7. 계단 요금 목록"
     unique_together = [("floor_from", "floor_to")]
@@ -297,6 +304,7 @@ class DistanceFeeRule(models.Model):
   is_active = models.BooleanField(default=True)
 
   class Meta:
+    db_table = "policy_distance_fee_rule"
     verbose_name = "거리 요금"
     verbose_name_plural = "8. 거리 요금 목록"
     unique_together = [("truck_type", "base_km", "unit_km")]
@@ -325,6 +333,7 @@ class SpecialItemFee(models.Model):
   is_active = models.BooleanField(default=True)
 
   class Meta:
+    db_table = "policy_spcial_item_fee"
     constraints = [
       models.UniqueConstraint(fields=["furniture"], name="uq_special_fee_furniture"),
     ]

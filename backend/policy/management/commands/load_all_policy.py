@@ -23,15 +23,15 @@ class Command(BaseCommand):
     use_tx = not options["no_transaction"]
 
     ordered_commands = [
-      ("policy_furniture", "load_furniture"),
-      ("policy_furniturerotation", "load_furniture_rotation"),
-      ("policy_boxrule", "load_box_rule"),
-      ("policy_truckspec", "load_truck_spec"),
-      ("policy_baseprice", "load_base_price"),
-      ("policy_ladderfeerule", "load_ladder_fee_rule"),
-      ("policy_stairsfeerule", "load_stairs_fee_rule"),
-      ("policy_distancefeerule", "load_distance_fee_rule"),
-      ("policy_specialitemfee", "load_special_item_fee"),
+      ("furniture", "load_furniture"),
+      ("furniture_rotation", "load_furniture_rotation"),
+      ("policy_box_rule", "load_box_rule"),
+      ("policy_truck_spec", "load_truck_spec"),
+      ("policy_base_price", "load_base_price"),
+      ("policy_ladder_fee_rule", "load_ladder_fee_rule"),
+      ("policy_stairs_fee_rule", "load_stairs_fee_rule"),
+      ("policy_distance_fee_rule", "load_distance_fee_rule"),
+      ("policy_special_item_fee", "load_special_item_fee"),
     ]
 
     def _run_all():
