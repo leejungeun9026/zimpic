@@ -1,4 +1,16 @@
+import os
+from django.utils import timezone
 from django.db import models
+
+
+def vision_image_upload_to(instance, filename):
+  """
+  이미지 파일 저장 시 파일명 앞에 timestamp 추가
+  """
+  ts = timezone.now().strftime("%Y%m%d%H%M%S")
+  name, ext = os.path.splitext(filename)
+  return f"vision/{ts}_{name}{ext}"
+
 
 
 class VisionImage(models.Model):
@@ -9,9 +21,8 @@ class VisionImage(models.Model):
 
   room_type = models.CharField(max_length=30, blank=True)
 
-  image = models.ImageField(upload_to="vision/", null=True, blank=True)
+  image = models.ImageField(upload_to=vision_image_upload_to, null=True, blank=True)
   image_file_name = models.CharField(max_length=255, blank=True)
-  image_url = models.TextField(blank=True)
 
   sort_order = models.IntegerField(default=0)
   created_at = models.DateTimeField(auto_now_add=True)
