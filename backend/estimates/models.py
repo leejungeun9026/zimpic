@@ -23,7 +23,11 @@ class Estimate(models.Model):
   dest_use_ladder = models.BooleanField(default=False)
 
   distance_km = models.DecimalField(max_digits=7, decimal_places=2)  # 거리(km)
-  recommended_ton = models.IntegerField()  # 추천 톤수(예: 6)
+  recommended_ton = models.DecimalField(
+    max_digits=4,
+    decimal_places=1,
+    help_text="추천 적재 톤수 (예: 6.0, 7.5, 10.0)"
+  )
   special_item_count = models.IntegerField(default=0)  # 특수짐 개수
 
   created_at = models.DateTimeField(auto_now_add=True)
