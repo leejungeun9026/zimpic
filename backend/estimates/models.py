@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.core.validators import MinValueValidator
 
 
 class Estimate(models.Model):
@@ -22,13 +23,54 @@ class Estimate(models.Model):
   dest_has_elevator = models.BooleanField(default=False)
   dest_use_ladder = models.BooleanField(default=False)
 
-  distance_km = models.DecimalField(max_digits=7, decimal_places=2)  # 거리(km)
+  distance_km = models.DecimalField(max_digits=7, decimal_places=2)
+
+  special_item_count = models.IntegerField(
+    default=0,
+    help_text="특수가구 개수"
+  )
+  boxes_count = models.PositiveSmallIntegerField(
+    null=True, blank=True,
+    help_text="평수 룰로 산정된 박스 개수(boxes_avg)"
+  )
+  boxes_description = models.CharField(
+    max_length=255,
+    null=True, blank=True,
+    help_text="박스 산정 근거 설명"
+  )
+
+
+
   recommended_ton = models.DecimalField(
     max_digits=4,
     decimal_places=1,
     help_text="추천 적재 톤수 (예: 6.0, 7.5, 10.0)"
   )
-  special_item_count = models.IntegerField(default=0)  # 특수짐 개수
+  total_cbm = models.DecimalField(
+    max_digits=9, decimal_places=2,
+    null=True, blank=True,
+    validators=[MinValueValidator(0)],
+    help_text="가구+박스 총 부피(CBM)"
+  )
+  truck_capacity_cbm = models.DecimalField(
+      max_digits=9, decimal_places=2,
+      null=True, blank=True,
+      validators=[MinValueValidator(0)],
+      help_text="선택된 트럭 조합 총 용량(CBM)"
+  )
+  load_factor_pct = models.DecimalField(
+      max_digits=5, decimal_places=1,
+      null=True, blank=True,
+      validators=[MinValueValidator(0)],
+      help_text="총 적재율(%)"
+  )
+  remaining_cbm = models.DecimalField(
+      max_digits=9, decimal_places=2,
+      null=True, blank=True,
+      validators=[MinValueValidator(0)],
+      help_text="총 남은 용량(CBM)"
+  )
+
 
   created_at = models.DateTimeField(auto_now_add=True)
 
@@ -59,6 +101,31 @@ class EstimateTruckPlan(models.Model):
   inner_w_cm = models.DecimalField(max_digits=7, decimal_places=2)
   inner_d_cm = models.DecimalField(max_digits=7, decimal_places=2)
   inner_h_cm = models.DecimalField(max_digits=7, decimal_places=2)
+
+  capacity_cbm = models.DecimalField(
+    max_digits=9, decimal_places=2,
+    null=True, blank=True,
+    validators=[MinValueValidator(0)],
+    help_text="이 트럭 용량(CBM)"
+  )
+  load_cbm = models.DecimalField(
+    max_digits=9, decimal_places=2,
+    null=True, blank=True,
+    validators=[MinValueValidator(0)],
+    help_text="이 트럭 배정 적재량(CBM)"
+  )
+  load_factor_pct = models.DecimalField(
+    max_digits=5, decimal_places=1,
+    null=True, blank=True,
+    validators=[MinValueValidator(0)],
+    help_text="이 트럭 적재율(%)"
+  )
+  remaining_cbm = models.DecimalField(
+    max_digits=9, decimal_places=2,
+    null=True, blank=True,
+    validators=[MinValueValidator(0)],
+    help_text="이 트럭 남은 용량(CBM)"
+  )
 
   class Meta:
     db_table = "estimate_truck_plan"
@@ -175,7 +242,7 @@ class EstimatePrice(models.Model):
   )
 
   total_amount = models.IntegerField()
-  calculated_at = models.DateTimeField()
+  calculated_at = models.DateTimeField(auto_now_add=True)
 
   class Meta:
     db_table = "estimate_price"

@@ -10,11 +10,10 @@ from .serializers import EstimateCreateSerializer, EstimateResponseSerializer
 
 
 class EstimateCreateAPIView(APIView):
-  @transaction.atomic
   def post(self, request):
     in_ser = EstimateCreateSerializer(data=request.data)
     in_ser.is_valid(raise_exception=True)
-    
+
     estimate = create_estimate(in_ser.validated_data)
     out = EstimateResponseSerializer(estimate).data
 

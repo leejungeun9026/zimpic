@@ -12,17 +12,55 @@ from .models import (
 
 @admin.register(Estimate)
 class EstimateAdmin(admin.ModelAdmin):
-  list_display = ("id", "move_type", "area", "distance_km", "recommended_ton", "special_item_count", "created_at")
-  list_filter = ("move_type",)
+  list_display = (
+    "id",
+    "move_type",
+    "area",
+    "recommended_ton",
+    "total_cbm",
+    "truck_capacity_cbm",
+    "load_factor_pct",
+    "remaining_cbm",
+    "distance_km",
+    "created_at",
+  )
+  list_filter = ("move_type", "created_at")
   search_fields = ("origin_address", "dest_address")
-  ordering = ("-id",)
+  readonly_fields = (
+    "created_at",
+    "distance_km",
+    "recommended_ton",
+    "total_cbm",
+    "truck_capacity_cbm",
+    "load_factor_pct",
+    "remaining_cbm",
+  )
+
 
 
 @admin.register(EstimateTruckPlan)
 class EstimateTruckPlanAdmin(admin.ModelAdmin):
-  list_display = ("id", "estimate_id", "truck_type", "truck_count", "inner_w_cm", "inner_d_cm", "inner_h_cm")
+  list_display = (
+    "id",
+    "estimate",
+    "truck_type",
+    "truck_count",
+    "capacity_cbm",
+    "load_cbm",
+    "load_factor_pct",
+    "remaining_cbm",
+    "inner_w_cm",
+    "inner_d_cm",
+    "inner_h_cm",
+  )
   list_filter = ("truck_type",)
-  raw_id_fields = ("estimate",)
+  search_fields = ("estimate__id",)
+  readonly_fields = (
+    "capacity_cbm",
+    "load_cbm",
+    "load_factor_pct",
+    "remaining_cbm",
+  )
 
 
 @admin.register(EstimateRoom)

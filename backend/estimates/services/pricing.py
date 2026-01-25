@@ -1,101 +1,133 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Optional, Tuple
-import os
-import requests
+from typing import Dict, Tuple, List
+from django.db import transaction
+from django.utils import timezone
+
+from estimates.models import EstimatePrice, EstimatePriceSection
+from policy.models import BasePrice, LadderFeeRule, StairsFeeRule, DistanceFeeRule
+
+from .context import EstimateContext
+from .pricing_distance import build_distance_pricing
+from .pricing_access import build_access_pricing
+from .pricing_special import build_special_pricing
 
 
-@dataclass(frozen=True)
-class KakaoCoord:
-    x: float  # longitude
-    y: float  # latitude
+def _truck_type_rank(truck_type: str) -> float:
+    # 비교용 톤수
+    mapping = {
+        "1T": 1.0,
+        "2_5T": 2.5,
+        "5T": 5.0,
+        "6T": 6.0,
+        "7_5T": 7.5,
+        "10T": 10.0,
+    }
+    return mapping.get(truck_type, 0.0)
 
 
-class DistanceError(Exception):
-    pass
-
-
-def _get_kakao_rest_key() -> str:
-    key = os.getenv("KAKAO_REST_API_KEY")
-    if not key:
-        raise DistanceError("KAKAO_REST_API_KEY is not set")
-    return key
-
-
-def geocode_address(address: str) -> Optional[KakaoCoord]:
-    """
-    도로명/지번 주소 -> 좌표(x,y)로 변환
-    Kakao Local Address Search API 사용 :contentReference[oaicite:3]{index=3}
-    """
-    key = _get_kakao_rest_key()
-    url = "https://dapi.kakao.com/v2/local/search/address.json"
-    headers = {"Authorization": f"KakaoAK {key}"}
-    params = {"query": address}
-
-    r = requests.get(url, headers=headers, params=params, timeout=5)
-    r.raise_for_status()
-    data = r.json()
-
-    docs = data.get("documents", [])
-    if not docs:
+def _pick_main_truck_type(plans) -> str | None:
+    if not plans:
         return None
-
-    # 가장 첫 결과 사용
-    x = float(docs[0]["x"])
-    y = float(docs[0]["y"])
-    return KakaoCoord(x=x, y=y)
+    return max((p.truck_type for p in plans if p.truck_type), key=_truck_type_rank, default=None)
 
 
-def directions_distance_m(origin: KakaoCoord, dest: KakaoCoord, priority: str = "DISTANCE") -> int:
+def _build_base_section(
+    *,
+    ctx: EstimateContext,
+    price: EstimatePrice,
+    base_map: Dict[Tuple[str, str], BasePrice],
+) -> int:
     """
-    출발/도착 좌표 -> 자동차 길찾기 거리(m)
-    Kakao Mobility Directions API 사용 :contentReference[oaicite:4]{index=4}
-    priority="DISTANCE"면 최단거리 성향 :contentReference[oaicite:5]{index=5}
+    BASE 섹션 생성 (라인 없음)
     """
-    key = _get_kakao_rest_key()
-    url = "https://apis-navi.kakaomobility.com/v1/directions"
-    headers = {
-        "Authorization": f"KakaoAK {key}",
-        "Content-Type": "application/json",
+    estimate = ctx.estimate
+    plans = ctx.truck_plans
+    main_truck = _pick_main_truck_type(plans)
+
+    amount = 0
+    desc = None
+
+    if main_truck:
+        rule = base_map.get((estimate.move_type, main_truck))
+        if rule:
+            amount = int(rule.base_amount)
+            # note가 있으면 그것 우선
+            if rule.note:
+                desc = f"{main_truck} {estimate.move_type} 기준 ({rule.note})"
+            else:
+                desc = f"{main_truck} {estimate.move_type} 기준 (작업자 {rule.included_workers}명)"
+
+    EstimatePriceSection.objects.create(
+        estimate_price=price,
+        key=EstimatePriceSection.Key.BASE,
+        title="기본 이사 비용",
+        amount=amount,
+        description=desc,
+    )
+    return amount
+
+
+@transaction.atomic
+def build_pricing(ctx: EstimateContext) -> None:
+    estimate = ctx.estimate
+    plans = ctx.truck_plans
+    items = ctx.items
+
+    # 1) price upsert (calculated_at 꼭 넣기)
+    price, _ = EstimatePrice.objects.update_or_create(
+        estimate=estimate,
+        defaults={
+            "total_amount": 0,
+            "calculated_at": timezone.now(),
+        },
+    )
+
+    # 2) 재계산 대비: 섹션 삭제(라인은 CASCADE면 같이 삭제)
+    EstimatePriceSection.objects.filter(estimate_price=price).delete()
+
+    # 3) policy 룰 한 번에 로드
+    base_map: Dict[Tuple[str, str], BasePrice] = {
+        (r.move_type, r.truck_type): r
+        for r in BasePrice.objects.filter(is_active=True)
     }
-    params = {
-        "origin": f"{origin.x},{origin.y}",
-        "destination": f"{dest.x},{dest.y}",
-        "priority": priority,  # "DISTANCE" 또는 "TIME"
-    }
+    ladder_rules = list(LadderFeeRule.objects.filter(is_active=True))
+    stairs_rules = list(StairsFeeRule.objects.filter(is_active=True))
+    distance_rules = list(DistanceFeeRule.objects.filter(is_active=True))
+    # ✅ special은 build_special_pricing 내부에서 SpecialItemFee 로드하니까 여기서 안 해도 됨
 
-    r = requests.get(url, headers=headers, params=params, timeout=5)
-    r.raise_for_status()
-    data = r.json()
+    # 4) 섹션 생성 + 합산
+    total = 0
 
-    routes = data.get("routes", [])
-    if not routes:
-        raise DistanceError("No routes returned from directions API")
+    total += _build_base_section(ctx=ctx, price=price, base_map=base_map)
 
-    # 문서에 전체 거리(distance, meter)가 존재 :contentReference[oaicite:6]{index=6}
-    summary = routes[0].get("summary") or {}
-    distance_m = summary.get("distance")
+    total += build_access_pricing(
+        price=price,
+        plans=plans,
+        ladder_rules=ladder_rules,
+        stairs_rules=stairs_rules,
+        origin_floor=int(estimate.origin_floor or 0),
+        origin_has_elevator=bool(estimate.origin_has_elevator),
+        origin_use_ladder=bool(estimate.origin_use_ladder),
+        dest_floor=int(estimate.dest_floor or 0),
+        dest_has_elevator=bool(estimate.dest_has_elevator),
+        dest_use_ladder=bool(estimate.dest_use_ladder),
+    )
 
-    if distance_m is None:
-        # 일부 응답 형태 변화 대비(방어)
-        raise DistanceError("distance field not found in directions response")
+    total += build_distance_pricing(
+        distance_km=float(estimate.distance_km or 0),
+        recommended_ton=estimate.recommended_ton,
+        rules=distance_rules,
+        price=price,
+    )
 
-    return int(distance_m)
+    # ✅ SPECIAL은 한 번만 호출
+    total += build_special_pricing(
+        estimate=estimate,
+        price=price,
+        items=items,
+    )
 
-
-def calculate_distance_km(origin_address: str, dest_address: str) -> float:
-    """
-    주소 -> 거리(km)
-    실패하면 DistanceError 발생(정책에 따라 0.0 반환으로 바꿔도 됨)
-    """
-    origin = geocode_address(origin_address)
-    dest = geocode_address(dest_address)
-
-    if origin is None:
-        raise DistanceError(f"Cannot geocode origin_address: {origin_address}")
-    if dest is None:
-        raise DistanceError(f"Cannot geocode dest_address: {dest_address}")
-
-    meters = directions_distance_m(origin, dest, priority="DISTANCE")
-    return round(meters / 1000.0, 2)
+    # 5) total 저장
+    price.total_amount = int(total)
+    price.save(update_fields=["total_amount"])

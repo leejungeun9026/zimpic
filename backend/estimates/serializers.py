@@ -87,7 +87,11 @@ class EstimateCreateSerializer(serializers.Serializer):
 class EstimateTruckPlanResponseSerializer(serializers.ModelSerializer):
   class Meta:
     model = EstimateTruckPlan
-    fields = ["truck_type", "truck_count", "inner_w_cm", "inner_d_cm", "inner_h_cm"]
+    fields = [
+      "truck_type", "truck_count",
+      "inner_w_cm", "inner_d_cm", "inner_h_cm",
+      "capacity_cbm", "load_cbm", "load_factor_pct", "remaining_cbm",
+    ]
 
 
 class EstimateItemResponseSerializer(serializers.ModelSerializer):
@@ -140,6 +144,19 @@ class EstimatePriceSectionResponseSerializer(serializers.ModelSerializer):
     model = EstimatePriceSection
     fields = ["key", "title", "amount", "description", "lines"]
 
+  def to_representation(self, instance):
+    data = super().to_representation(instance)
+
+    # lines가 필요한 section
+    if instance.key not in (
+        EstimatePriceSection.Key.LADDER,
+        EstimatePriceSection.Key.STAIRS,
+        EstimatePriceSection.Key.SPECIAL,
+    ):
+      data.pop("lines", None)
+
+    return data
+
 
 class EstimatePriceResponseSerializer(serializers.ModelSerializer):
   sections = EstimatePriceSectionResponseSerializer(many=True)
@@ -155,13 +172,18 @@ class EstimateSummaryResponseSerializer(serializers.ModelSerializer):
   class Meta:
     model = Estimate
     fields = [
-      "move_type",
-      "area",
+      "move_type", "area",
       "origin_address", "origin_floor", "origin_has_elevator", "origin_use_ladder",
       "dest_address", "dest_floor", "dest_has_elevator", "dest_use_ladder",
       "distance_km",
-      "recommended_ton",
       "special_item_count",
+      "boxes_count",
+      "boxes_description",
+      "recommended_ton",
+      "total_cbm",
+      "truck_capacity_cbm",
+      "load_factor_pct",
+      "remaining_cbm",
       "truck_plan",
     ]
 

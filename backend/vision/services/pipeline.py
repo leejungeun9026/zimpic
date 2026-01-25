@@ -98,7 +98,7 @@ def process_rooms_upload(
     uploaded = files[file_index]
 
     # VisionImage 객체 생성 및 DB저장, 이미지 파일 저장
-    # image = models.ImageField() -> ImageField는 create로 save()하면 경로(vision/) 및 suffix추가하여 파일명 변경, 이미지 파일을 media에 저장 해줌 
+    # image = models.ImageField() -> ImageField는 create로 save()하면 경로(vision/) 및 suffix추가하여 파일명 변경, 이미지 파일을 media에 저장 해줌
     vision_image = VisionImage.objects.create(
       room_type=room_type,
       image=uploaded, # 파일로도 저장 됨
@@ -117,15 +117,14 @@ def process_rooms_upload(
     with get_infer_path(vision_image.image) as infer_path:
       detections = run_vision_inference(infer_path)
 
-    print("detections:", detections[:3])
 
 
     # ====================================
-    # 3. YOLO결과 + 가구 정보 
+    # 3. YOLO결과 + 가구 정보
     #    VisionDetection 저장 및 응답
     # ====================================
     resp_dets: List[Dict[str, Any]] = []
-    
+
     # yolo결과 하나씩 꺼내기
     for det in detections:
       yolo_id = det.get("yolo_id")
