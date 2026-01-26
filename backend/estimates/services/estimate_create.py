@@ -36,7 +36,8 @@ def create_estimate(data: Dict[str, Any]) -> Estimate:
             data["origin_address"],
             data["dest_address"],
         )
-    except DistanceError:
+    except DistanceError as e:
+        print(e)
         distance_km = 0.0
 
     # ====================================

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Optional, Tuple
 import os
 import requests
+from dataclasses import dataclass
+from typing import Optional
+from dotenv import load_dotenv
+load_dotenv()
 
 
 @dataclass(frozen=True)
@@ -26,7 +28,7 @@ def _get_kakao_rest_key() -> str:
 def geocode_address(address: str) -> Optional[KakaoCoord]:
     """
     도로명/지번 주소 -> 좌표(x,y)로 변환
-    Kakao Local Address Search API 사용 :contentReference[oaicite:3]{index=3}
+    Kakao Local Address Search API 사용
     """
     key = _get_kakao_rest_key()
     url = "https://dapi.kakao.com/v2/local/search/address.json"
@@ -50,8 +52,8 @@ def geocode_address(address: str) -> Optional[KakaoCoord]:
 def directions_distance_m(origin: KakaoCoord, dest: KakaoCoord, priority: str = "DISTANCE") -> int:
     """
     출발/도착 좌표 -> 자동차 길찾기 거리(m)
-    Kakao Mobility Directions API 사용 :contentReference[oaicite:4]{index=4}
-    priority="DISTANCE"면 최단거리 성향 :contentReference[oaicite:5]{index=5}
+    Kakao Mobility Directions API 사용
+    priority="DISTANCE"면 최단거리 성향
     """
     key = _get_kakao_rest_key()
     url = "https://apis-navi.kakaomobility.com/v1/directions"
