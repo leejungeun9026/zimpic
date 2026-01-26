@@ -1,199 +1,151 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import StepIndicator from "../components/layout/StepIndicator";
 import { useEstimateStore } from "../store/estimateStore";
 
+import LocationSection from "../components/estimate/address/LocationSection";
+
 export default function AddressPage() {
   const navigate = useNavigate();
-  const { moveInfo, setMoveInfo } = useEstimateStore();
 
-  // 도착지 미정 여부 (true = 도착지 있음)
-  const [hasDestination, setHasDestination] = useState(true);
+  const moveInfo = useEstimateStore((s) => s.moveInfo);
+  const setMoveInfo = useEstimateStore((s) => s.setMoveInfo);
 
-  // 엘리베이터 기본값 true 보정
+  const handlePrev = () => navigate("/AICheckPage");
+  const handleNext = () => navigate("/ResultPage");
+
+  // ✅ 도착지 미정 = store 값
+  const isDestinationUnknown = !!moveInfo.toUnknown;
+
+  // ✅ 도착지 미정이면 도착지 관련 값 초기화(체크박스는 false로)
   useEffect(() => {
-    setMoveInfo({
-      fromElevator: moveInfo.fromElevator ?? true,
-      toElevator: moveInfo.toElevator ?? true,
-    });
-    // eslint-disable-next-line
-  }, []);
-
-  // 도착지 미정 체크 해제 시 값 초기화
-  useEffect(() => {
-    if (!hasDestination) {
+    if (isDestinationUnknown) {
       setMoveInfo({
         toAddress: "",
         toFloor: 0,
-        toElevator: true,
+        toElevator: false,
+        toLadder: false,
       });
     }
-  }, [hasDestination, setMoveInfo]);
+  }, [isDestinationUnknown, setMoveInfo]);
 
-  // 입력 검증
+  // ✅ 검증
   const isValid =
     moveInfo.fromAddress &&
+    moveInfo.fromAddress.trim().length > 0 &&
     moveInfo.fromFloor > 0 &&
-    (!hasDestination ||
-      (moveInfo.toAddress && moveInfo.toFloor > 0));
+    (isDestinationUnknown ||
+      (moveInfo.toAddress &&
+        moveInfo.toAddress.trim().length > 0 &&
+        moveInfo.toFloor > 0));
+
+  /**
+   * ✅ 다음 우편번호 팝업 열기
+   * type: "from" | "to"
+   */
+  const openPostcode = (type) => {
+    if (!window?.daum?.Postcode) {
+      alert(
+        "주소 검색 스크립트가 로드되지 않았어요. index.html에 postcode 스크립트를 추가했는지 확인해 주세요."
+      );
+      return;
+    }
+
+    new window.daum.Postcode({
+      oncomplete: (data) => {
+        const address = data.roadAddress || data.address || "";
+
+        if (type === "from") {
+          setMoveInfo({ fromAddress: address });
+        } else {
+          setMoveInfo({
+            toUnknown: false,
+            toAddress: address,
+          });
+        }
+      },
+    }).open();
+  };
 
   return (
     <div className="container my-4">
       <div className="card shadow-sm p-4">
-
         <StepIndicator currentStep={3} />
 
-        <h2 className="mb-4">출발 / 도착 정보</h2>
+        <h2 className="mb-2">주소 입력</h2>
+        <p className="text-muted mb-4">
+          이사 견적 산출을 위해 출발지와 도착지 정보를 입력해 주세요.
+        </p>
 
-        <div className="row g-4">
-          {/* 출발지 */}
-          <div className="col-md-6">
-            <div className="card h-100">
-              <div className="card-body">
-                <h5 className="mb-3">출발지</h5>
+        {/* 출발지 */}
+        <LocationSection
+          title="출발지 정보"
+          idPrefix="from"
+          right={null}
+          addressValue={moveInfo.fromAddress}
+          addressDisabled={false}
+          onFindAddress={() => openPostcode("from")}
+          floorValue={moveInfo.fromFloor}
+          onChangeFloor={(v) => setMoveInfo({ fromFloor: v })}
+          elevatorChecked={moveInfo.fromElevator}
+          onChangeElevator={(v) => setMoveInfo({ fromElevator: v })}
+          ladderChecked={moveInfo.fromLadder}
+          onChangeLadder={(v) => setMoveInfo({ fromLadder: v })}
+          fieldsDisabled={false}
+          hint={true}
+          bottomNote={null}
+        />
 
-                <div className="mb-3">
-                  <label className="form-label">출발지 주소</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="예: 부산광역시 금정구"
-                    value={moveInfo.fromAddress}
-                    onChange={(e) =>
-                      setMoveInfo({ fromAddress: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">층수</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min={1}
-                    value={moveInfo.fromFloor}
-                    onChange={(e) =>
-                      setMoveInfo({ fromFloor: Number(e.target.value) })
-                    }
-                  />
-                </div>
-
-                <div className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    checked={moveInfo.fromElevator}
-                    onChange={(e) =>
-                      setMoveInfo({ fromElevator: e.target.checked })
-                    }
-                  />
-                  <label className="form-check-label">
-                    엘리베이터 있음
-                  </label>
-                </div>
-              </div>
+        {/* 도착지 */}
+        <LocationSection
+          title="도착지 정보"
+          idPrefix="to"
+          right={
+            <div className="form-check">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="dest-unknown"
+                checked={isDestinationUnknown}
+                onChange={(e) => setMoveInfo({ toUnknown: e.target.checked })}
+              />
+              <label className="form-check-label" htmlFor="dest-unknown">
+                도착지 미정
+              </label>
             </div>
-          </div>
-
-          {/* 도착지 */}
-          <div className="col-md-6">
-            <div className="card h-100">
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h5 className="mb-0">도착지</h5>
-                  <div className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      checked={hasDestination}
-                      onChange={(e) =>
-                        setHasDestination(e.target.checked)
-                      }
-                    />
-                    <label className="form-check-label">
-                      도착지 있음
-                    </label>
-                  </div>
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">도착지 주소</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="예: 부산광역시 부산진구"
-                    disabled={!hasDestination}
-                    value={moveInfo.toAddress}
-                    onChange={(e) =>
-                      setMoveInfo({ toAddress: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">층수</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min={1}
-                    disabled={!hasDestination}
-                    value={moveInfo.toFloor}
-                    onChange={(e) =>
-                      setMoveInfo({ toFloor: Number(e.target.value) })
-                    }
-                  />
-                </div>
-
-                <div className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    disabled={!hasDestination}
-                    checked={moveInfo.toElevator}
-                    onChange={(e) =>
-                      setMoveInfo({ toElevator: e.target.checked })
-                    }
-                  />
-                  <label className="form-check-label">
-                    엘리베이터 있음
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 참고사항 */}
-        <h4 className="mt-5">참고사항</h4>
-        <div className="card mt-2 bg-light">
-          <div className="card-body text-muted small">
-            <p className="mb-1">
-              • 입력하신 정보는 작업 인원 및 장비 산정에 사용됩니다.
-            </p>
-            <p className="mb-1">
-              • 엘리베이터가 없는 경우 추가 인력 또는 사다리차가 필요할 수 있습니다.
-            </p>
-          </div>
-        </div>
+          }
+          addressValue={moveInfo.toAddress}
+          addressDisabled={isDestinationUnknown}
+          onFindAddress={() => openPostcode("to")}
+          floorValue={moveInfo.toFloor}
+          onChangeFloor={(v) => setMoveInfo({ toFloor: v })}
+          elevatorChecked={moveInfo.toElevator}
+          onChangeElevator={(v) => setMoveInfo({ toElevator: v })}
+          ladderChecked={moveInfo.toLadder}
+          onChangeLadder={(v) => setMoveInfo({ toLadder: v })}
+          fieldsDisabled={isDestinationUnknown}
+          hint={false}
+          bottomNote={
+            isDestinationUnknown
+              ? "도착지가 미정이면 도착지 정보는 나중에 입력할 수 있어요."
+              : null
+          }
+        />
 
         {/* 버튼 */}
         <div className="d-flex justify-content-between mt-4">
-          <button
-            className="btn btn-outline-secondary"
-            onClick={() => navigate("/AICheckPage")}
-          >
-            이전
+          <button className="btn btn-outline-secondary px-4" onClick={handlePrev}>
+            이전 단계
           </button>
 
           <button
-            className="btn btn-primary"
+            className="btn btn-primary px-4"
             disabled={!isValid}
-            onClick={() => navigate("/ResultPage")}
+            onClick={handleNext}
           >
-            견적 보기
+            견적 확인하기
           </button>
         </div>
-
       </div>
     </div>
   );
