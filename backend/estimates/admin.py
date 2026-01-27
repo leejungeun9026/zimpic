@@ -9,9 +9,20 @@ from .models import (
   EstimatePriceLine,
 )
 
+class ReadOnlyAdmin(admin.ModelAdmin):
+  def has_add_permission(self, request):
+    return False
+
+  def has_change_permission(self, request, obj=None):
+    return False
+
+  def has_delete_permission(self, request, obj=None):
+    return False
+
+
 
 @admin.register(Estimate)
-class EstimateAdmin(admin.ModelAdmin):
+class EstimateAdmin(ReadOnlyAdmin):
   list_display = (
     "id",
     "move_type",
@@ -26,20 +37,10 @@ class EstimateAdmin(admin.ModelAdmin):
   )
   list_filter = ("move_type", "created_at")
   search_fields = ("origin_address", "dest_address")
-  readonly_fields = (
-    "created_at",
-    "distance_km",
-    "recommended_ton",
-    "total_cbm",
-    "truck_capacity_cbm",
-    "load_factor_pct",
-    "remaining_cbm",
-  )
-
 
 
 @admin.register(EstimateTruckPlan)
-class EstimateTruckPlanAdmin(admin.ModelAdmin):
+class EstimateTruckPlanAdmin(ReadOnlyAdmin):
   list_display = (
     "id",
     "estimate",
@@ -64,7 +65,7 @@ class EstimateTruckPlanAdmin(admin.ModelAdmin):
 
 
 @admin.register(EstimateRoom)
-class EstimateRoomAdmin(admin.ModelAdmin):
+class EstimateRoomAdmin(ReadOnlyAdmin):
   list_display = ("id", "estimate_id", "vision_image_id", "room_type", "sort_order", "created_at")
   list_filter = ("room_type",)
   raw_id_fields = ("estimate", "vision_image")
@@ -72,27 +73,27 @@ class EstimateRoomAdmin(admin.ModelAdmin):
 
 
 @admin.register(EstimateItem)
-class EstimateItemAdmin(admin.ModelAdmin):
+class EstimateItemAdmin(ReadOnlyAdmin):
   list_display = ("id", "estimate_room_id", "item_id", "furniture_id", "w_cm", "d_cm", "h_cm", "needs_disassembly", "created_at")
   raw_id_fields = ("estimate_room", "furniture")
   search_fields = ("item_id",)
 
 
 @admin.register(EstimatePrice)
-class EstimatePriceAdmin(admin.ModelAdmin):
+class EstimatePriceAdmin(ReadOnlyAdmin):
   list_display = ("id", "estimate_id", "total_amount", "calculated_at")
   raw_id_fields = ("estimate",)
 
 
 @admin.register(EstimatePriceSection)
-class EstimatePriceSectionAdmin(admin.ModelAdmin):
+class EstimatePriceSectionAdmin(ReadOnlyAdmin):
   list_display = ("id", "estimate_price_id", "key", "title", "amount")
   list_filter = ("key",)
   raw_id_fields = ("estimate_price",)
 
 
 @admin.register(EstimatePriceLine)
-class EstimatePriceLineAdmin(admin.ModelAdmin):
+class EstimatePriceLineAdmin(ReadOnlyAdmin):
   list_display = ("id", "estimate_price_section_id", "scope", "furniture_id", "name_kr", "amount")
   list_filter = ("scope",)
   raw_id_fields = ("estimate_price_section", "furniture")

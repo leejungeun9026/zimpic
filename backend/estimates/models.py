@@ -38,9 +38,6 @@ class Estimate(models.Model):
     null=True, blank=True,
     help_text="박스 산정 근거 설명"
   )
-
-
-
   recommended_ton = models.DecimalField(
     max_digits=4,
     decimal_places=1,
@@ -71,11 +68,12 @@ class Estimate(models.Model):
       help_text="총 남은 용량(CBM)"
   )
 
-
   created_at = models.DateTimeField(auto_now_add=True)
 
   class Meta:
     db_table = "estimate"
+    verbose_name = "견적 정보"
+    verbose_name_plural = "1. 견적 정보 목록"
     indexes = [
       models.Index(fields=["move_type"]),
       models.Index(fields=["created_at"]),
@@ -129,6 +127,8 @@ class EstimateTruckPlan(models.Model):
 
   class Meta:
     db_table = "estimate_truck_plan"
+    verbose_name = "이사 차량"
+    verbose_name_plural = "2. 이사 차량 목록"
     indexes = [
       models.Index(fields=["estimate"]),
       models.Index(fields=["truck_type"]),
@@ -165,6 +165,8 @@ class EstimateRoom(models.Model):
 
   class Meta:
     db_table = "estimate_room"
+    verbose_name = "공간(방) 정보"
+    verbose_name_plural = "3. 공간(방) 정보 목록"
     constraints = [
       models.UniqueConstraint(
         fields=["estimate", "sort_order"],
@@ -222,6 +224,8 @@ class EstimateItem(models.Model):
 
   class Meta:
     db_table = "estimate_item"
+    verbose_name = "이삿짐 아이템"
+    verbose_name_plural = "4. 이삿짐 아이템 목록"
     indexes = [
       models.Index(fields=["estimate_room"]),
       models.Index(fields=["furniture"]),
@@ -246,6 +250,8 @@ class EstimatePrice(models.Model):
 
   class Meta:
     db_table = "estimate_price"
+    verbose_name = "견적 비용"
+    verbose_name_plural = "5. 견적 비용 목록"
 
   def __str__(self):
     return f"Price#{self.id} est={self.estimate_id} total={self.total_amount}"
@@ -275,6 +281,8 @@ class EstimatePriceSection(models.Model):
 
   class Meta:
     db_table = "estimate_price_section"
+    verbose_name = "견적 세부비용"
+    verbose_name_plural = "6. 견적 세부비용 목록"
     indexes = [
       models.Index(fields=["estimate_price"]),
       models.Index(fields=["key"]),
@@ -315,6 +323,8 @@ class EstimatePriceLine(models.Model):
 
   class Meta:
     db_table = "estimate_price_line"
+    verbose_name = "견적 세부비용 내역"
+    verbose_name_plural = "7. 견적 세부비용 내역 목록"
     indexes = [
       models.Index(fields=["estimate_price_section"]),
       models.Index(fields=["scope"]),

@@ -56,7 +56,7 @@ class VisionDetection(models.Model):
   )
 
   yolo_id = models.IntegerField(null=True, blank=True)
-  yolo_class = models.CharField(max_length=50)
+  yolo_class = models.CharField(null=True, blank=True, max_length=50)
 
   furniture = models.ForeignKey(
     "policy.Furniture",
@@ -67,13 +67,13 @@ class VisionDetection(models.Model):
     db_index=True,
   )
 
-  confidence = models.DecimalField(max_digits=6, decimal_places=5)
+  confidence = models.DecimalField(null=True, blank=True, max_digits=6, decimal_places=5)
 
   # YOLO norm center_x, center_y, w, h (0~1)
-  bbox_x = models.DecimalField(max_digits=8, decimal_places=6)
-  bbox_y = models.DecimalField(max_digits=8, decimal_places=6)
-  bbox_w = models.DecimalField(max_digits=8, decimal_places=6)
-  bbox_h = models.DecimalField(max_digits=8, decimal_places=6)
+  bbox_x = models.DecimalField(null=True, blank=True, max_digits=8, decimal_places=6)
+  bbox_y = models.DecimalField(null=True, blank=True, max_digits=8, decimal_places=6)
+  bbox_w = models.DecimalField(null=True, blank=True, max_digits=8, decimal_places=6)
+  bbox_h = models.DecimalField(null=True, blank=True, max_digits=8, decimal_places=6)
 
   created_at = models.DateTimeField(auto_now_add=True)
 

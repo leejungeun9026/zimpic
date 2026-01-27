@@ -40,8 +40,9 @@ urlpatterns = [
 	path("admin/", admin.site.urls),
     path("api/", include("rest_framework.urls")),
     # path("api/", include("example.urls")),
-    path("api/", include("vision.urls")),
-    path("api/", include("estimates.urls")),
+    path("api/policy/", include("policy.urls")),    # GET
+    path("api/vision/", include("vision.urls")),           # POST
+    path("api/estimates/", include("estimates.urls")),        # POST
 ]
 
 # Django는 기본적으로 media/ 파일을 서빙하지 않음

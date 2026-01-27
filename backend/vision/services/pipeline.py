@@ -21,23 +21,30 @@ def _build_image_url(request, vision_image: VisionImage) -> str:
   return request.build_absolute_uri(vision_image.image.url)
 
 
-def _serialize_detection(d: VisionDetection, furniture: Optional[Furniture], confidence: Any) -> Dict[str, Any]:
+def _serialize_detection(vd: VisionDetection, furniture: Optional[Furniture]) -> Dict[str, Any]:
   """
   프론트에서 사용할 detection 응답 형태로 변환
   """
+  bbox = None
+  if (
+    vd.bbox_x is not None and vd.bbox_y is not None
+    and vd.bbox_w is not None and vd.bbox_h is not None
+  ):
+    bbox = {
+      "x": float(vd.bbox_x),
+      "y": float(vd.bbox_y),
+      "w": float(vd.bbox_w),
+      "h": float(vd.bbox_h),
+    }
+
   return {
-    "detection_id": d.id,
+    "detection_id": vd.id,
     "furniture_id": furniture.id if furniture else None,
     "name_kr": getattr(furniture, "name_kr", None),
     "name_en": getattr(furniture, "name_en", None),
     "category": getattr(furniture, "category", None),
-    "confidence": float(confidence) if confidence is not None else None,
-    "bbox": {
-      "x": float(d.bbox_x) if d.bbox_x is not None else None,
-      "y": float(d.bbox_y) if d.bbox_y is not None else None,
-      "w": float(d.bbox_w) if d.bbox_w is not None else None,
-      "h": float(d.bbox_h) if d.bbox_h is not None else None,
-    },
+    "confidence": float(vd.confidence) if vd.confidence is not None else None,
+    "bbox": bbox,
     "description": getattr(furniture, "description", None),
     "reference_model": getattr(furniture, "reference_model", None),
     "reference_url": getattr(furniture, "reference_url", None),
@@ -128,7 +135,10 @@ def process_rooms_upload(
     # yolo결과 하나씩 꺼내기
     for det in detections:
       yolo_id = det.get("yolo_id")
-      yolo_class = str(det.get("yolo_class"))
+
+      raw_class = det.get("yolo_class")
+      yolo_class = str(raw_class) if raw_class is not None else None
+      
       confidence = det.get("confidence")
       bbox = det.get("bbox") or {}
 
@@ -143,7 +153,7 @@ def process_rooms_upload(
         continue
 
       # DB 저장
-      d = VisionDetection.objects.create(
+      vd = VisionDetection.objects.create(
         vision_image=vision_image,
         yolo_id=yolo_id,
         yolo_class=yolo_class,
@@ -156,15 +166,49 @@ def process_rooms_upload(
       )
 
       # 응답 결과에 추가
-      resp_dets.append(_serialize_detection(d, furniture, confidence))
+      resp_dets.append(_serialize_detection(vd, furniture))
+
+
+      ### 에어컨의 경우 실외기 데이터 가져오기 ###
+      # 실외기 이름 정의 (벽걸이용/스탠드용)
+      outdoor_name_en = None   
+      if yolo_id == 0 :   # 0 = air_conditioner_wall
+        outdoor_name_en = "ac_outdoor_wall"
+      elif yolo_id == 1 : # 1 = air_conditioner_stand
+        outdoor_name_en = "ac_outdoor_stand"
+      
+      # 실외기 이름이 있으면 Furniture에서 실외기 정보 가져오기
+      # 실외기는 yolo_id가 없으므로 yolo_id null중에서 가져옴
+      if outdoor_name_en :
+        outdoor_furniture = Furniture.objects.filter(
+          yolo_id__isnull = True,
+          name_en = outdoor_name_en,
+        ).first()
+
+        # 실외기 정보 가져왔으면
+        if outdoor_furniture :
+          outdoor_vd = VisionDetection.objects.create(
+            vision_image=vision_image,
+            yolo_id=None,
+            yolo_class=outdoor_name_en,
+            furniture=outdoor_furniture,
+            confidence=None,
+            bbox_x=None,
+            bbox_y=None,
+            bbox_w=None,
+            bbox_h=None,
+          )
+
+          # 응답 결과에 실외기 추가
+          resp_dets.append(_serialize_detection(outdoor_vd, outdoor_furniture))
 
     results.append(
-        {
-          "vision_image_id": vision_image.id,
-          "room_type": vision_image.room_type,
-          "image_url": image_url,
-          "detections": resp_dets,
-        }
+      {
+        "vision_image_id": vision_image.id,
+        "room_type": vision_image.room_type,
+        "image_url": image_url,
+        "detections": resp_dets,
+      }
     )
 
   return {"results": results}
