@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
+from policy.models import Furniture, FurnitureRotation
+
 from .models import (
   Estimate,
   EstimateTruckPlan,
@@ -114,7 +116,6 @@ class EstimateItemResponseSerializer(serializers.ModelSerializer):
     ]
 
   def get_name_kr(self, obj):
-    # policy.Furniture에 name_kr이 있다고 가정
     if obj.furniture and hasattr(obj.furniture, "name_kr"):
       return obj.furniture.name_kr
     return None
@@ -134,11 +135,25 @@ class EstimatePriceLineResponseSerializer(serializers.ModelSerializer):
 
   class Meta:
     model = EstimatePriceLine
-    fields = ["scope", "furniture_id", "name_kr", "amount", "description"]
+    fields = ["scope", "furniture_id", "amount", "description"]
+  
+  def to_representation(self, instance):
+    data = super().to_representation(instance)
+  
+    sec_key = instance.estimate_price_section.key
+
+    if sec_key == EstimatePriceSection.Key.LADDER or sec_key == EstimatePriceSection.Key.STAIRS :
+      data.pop("furniture_id", None)
+
+    if sec_key == EstimatePriceSection.Key.SPECIAL :
+      data.pop("scope", None)
+
+    return data
+
 
 
 class EstimatePriceSectionResponseSerializer(serializers.ModelSerializer):
-  lines = EstimatePriceLineResponseSerializer(many=True)
+  lines = EstimatePriceLineResponseSerializer(many=True, read_only=True)
 
   class Meta:
     model = EstimatePriceSection
@@ -149,11 +164,17 @@ class EstimatePriceSectionResponseSerializer(serializers.ModelSerializer):
 
     # lines가 필요한 section
     if instance.key not in (
-        EstimatePriceSection.Key.LADDER,
-        EstimatePriceSection.Key.STAIRS,
-        EstimatePriceSection.Key.SPECIAL,
+      EstimatePriceSection.Key.LADDER,
+      EstimatePriceSection.Key.STAIRS,
+      EstimatePriceSection.Key.SPECIAL,
     ):
       data.pop("lines", None)
+      
+    if instance.key not in (
+      EstimatePriceSection.Key.BASE,
+      EstimatePriceSection.Key.DISTANCE,
+    ):
+      data.pop("description", None)
 
     return data
 
@@ -167,7 +188,34 @@ class EstimatePriceResponseSerializer(serializers.ModelSerializer):
 
 
 class EstimateSummaryResponseSerializer(serializers.ModelSerializer):
-  truck_plan = EstimateTruckPlanResponseSerializer(source="truck_plans",many=True)
+  truck_plan = EstimateTruckPlanResponseSerializer(source="truck_plans", many=True)
+
+  distance_km = serializers.DecimalField(
+    max_digits=7, decimal_places=2, source="price.distance_km", read_only=True
+  )
+  recommended_ton = serializers.DecimalField(
+    max_digits=4, decimal_places=1, source="price.recommended_ton", read_only=True
+  )
+  special_item_count = serializers.IntegerField(
+    source="price.special_item_count", read_only=True
+  )
+  
+  boxes_count = serializers.IntegerField(source="price.boxes_count", read_only=True)
+  boxes_description = serializers.CharField(source="price.boxes_description", read_only=True)
+  box = serializers.SerializerMethodField()
+
+  total_cbm = serializers.DecimalField(
+    max_digits=9, decimal_places=2, source="price.total_cbm", read_only=True
+  )
+  truck_capacity_cbm = serializers.DecimalField(
+    max_digits=9, decimal_places=2, source="price.truck_capacity_cbm", read_only=True
+  )
+  load_factor_pct = serializers.DecimalField(
+    max_digits=5, decimal_places=1, source="price.load_factor_pct", read_only=True
+  )
+  remaining_cbm = serializers.DecimalField(
+    max_digits=9, decimal_places=2, source="price.remaining_cbm", read_only=True
+  )
 
   class Meta:
     model = Estimate
@@ -175,17 +223,52 @@ class EstimateSummaryResponseSerializer(serializers.ModelSerializer):
       "move_type", "area",
       "origin_address", "origin_floor", "origin_has_elevator", "origin_use_ladder",
       "dest_address", "dest_floor", "dest_has_elevator", "dest_use_ladder",
+
       "distance_km",
+      "recommended_ton",
       "special_item_count",
+      
       "boxes_count",
       "boxes_description",
-      "recommended_ton",
+      "box",
+
       "total_cbm",
       "truck_capacity_cbm",
       "load_factor_pct",
       "remaining_cbm",
+
       "truck_plan",
     ]
+
+  def get_box(self, obj: Estimate):
+    # policy에서 box 1개 가져오기
+    box = Furniture.objects.filter(name_en="box").first()
+    if not box:
+      return None
+
+    rotations = list(
+      FurnitureRotation.objects.filter(furniture=box)
+      .values_list("orientation_code", flat=True)
+    ) or ["WDH"]
+
+    packed_w_cm = box.width_cm + (2 * box.padding_cm)
+    packed_d_cm = box.depth_cm + (2 * box.padding_cm)
+    packed_h_cm = box.height_cm + (2 * box.padding_cm)
+
+    return {
+      "furniture_id": box.id,
+      "name_kr": box.name_kr,
+      "w_cm": box.width_cm,
+      "d_cm": box.depth_cm,
+      "h_cm": box.height_cm,
+      "padding_cm": box.padding_cm,
+      "packed_w_cm": packed_w_cm,
+      "packed_d_cm": packed_d_cm,
+      "packed_h_cm": packed_h_cm,
+      "stackable": bool(getattr(box, "stackable", False)),
+      "can_stack_on_top": bool(getattr(box, "can_stack_on_top", True)),
+      "allowed_rotations": rotations,
+    }
 
 
 class EstimateResponseSerializer(serializers.ModelSerializer):

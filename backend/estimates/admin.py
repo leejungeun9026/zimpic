@@ -20,23 +20,33 @@ class ReadOnlyAdmin(admin.ModelAdmin):
     return False
 
 
-
 @admin.register(Estimate)
 class EstimateAdmin(ReadOnlyAdmin):
   list_display = (
     "id",
     "move_type",
     "area",
-    "recommended_ton",
-    "total_cbm",
-    "truck_capacity_cbm",
-    "load_factor_pct",
-    "remaining_cbm",
-    "distance_km",
+    "origin_floor",
+    "dest_floor",
+    "price_total_amount",
+    "price_recommended_ton",
+    "price_distance_km",
     "created_at",
   )
   list_filter = ("move_type", "created_at")
   search_fields = ("origin_address", "dest_address")
+
+  @admin.display(description="총액")
+  def price_total_amount(self, obj: Estimate):
+    return getattr(obj.price, "total_amount", None)
+
+  @admin.display(description="추천 톤수")
+  def price_recommended_ton(self, obj: Estimate):
+    return getattr(obj.price, "recommended_ton", None)
+
+  @admin.display(description="거리(km)")
+  def price_distance_km(self, obj: Estimate):
+    return getattr(obj.price, "distance_km", None)
 
 
 @admin.register(EstimateTruckPlan)
@@ -81,7 +91,20 @@ class EstimateItemAdmin(ReadOnlyAdmin):
 
 @admin.register(EstimatePrice)
 class EstimatePriceAdmin(ReadOnlyAdmin):
-  list_display = ("id", "estimate_id", "total_amount", "calculated_at")
+  list_display = (
+    "id",
+    "estimate_id",
+    "total_amount",
+    "distance_km",
+    "recommended_ton",
+    "total_cbm",
+    "truck_capacity_cbm",
+    "load_factor_pct",
+    "remaining_cbm",
+    "special_item_count",
+    "boxes_count",
+    "calculated_at",
+  )
   raw_id_fields = ("estimate",)
 
 

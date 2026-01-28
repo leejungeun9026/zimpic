@@ -1,103 +1,105 @@
 # estimates/services/pricing_distance.py
 from __future__ import annotations
 
+import math
+from dataclasses import dataclass
 from decimal import Decimal
-from typing import Tuple, Dict, List
+from typing import List, Optional, Tuple
 
-from estimates.models import EstimatePrice, EstimatePriceSection
 from policy.models import DistanceFeeRule
 
 
-def _ceil_div(a: Decimal, b: Decimal) -> int:
-    return int((a / b).to_integral_value(rounding="ROUND_CEILING"))
-
-def format_truck_type_kr(truck_type: str) -> str:
-    mapping = {
-        "1T": "1톤",
-        "2_5T": "2.5톤",
-        "5T": "5톤",
-        "6T": "6톤",
-        "7_5T": "7.5톤",
-        "10T": "10톤",
-    }
-    return mapping.get(truck_type, truck_type)
+class DistancePricingError(Exception):
+  """거리 요금 산출 중 정책 누락/데이터 오류"""
 
 
-def calc_distance_fee(distance_km: Decimal, rule: DistanceFeeRule) -> Tuple[int, str]:
-    """
-    추천 톤수(=truck_type) 기준 거리요금 계산
-    반환: (amount, description)
-    """
-    base = Decimal(str(rule.base_km))
-    unit = Decimal(str(rule.unit_km))
-    per = int(rule.per_unit_amount)
-    truck_kr = format_truck_type_kr(rule.truck_type)
-
-    # 20km 이내
-    if distance_km <= base:
-        return 0, f"{truck_kr} 기준 {int(base)}km 이내 기본요금"
-
-    # 초과분 계산
-    excess = distance_km - base
-    units = _ceil_div(excess, unit)
-    amount = units * per
-
-    # base + units*unit = 요금이 적용되는 '도달 구간 km'
-    billed_km = int(base + Decimal(units) * unit)
-
-    desc = (
-        f"{truck_kr} {billed_km}km 요금 적용 ({base}km 초과 시 {rule.unit_km}km 당 추가 비용 {per:,}원)"
-    )
-    return amount, desc
+@dataclass
+class DistanceLine:
+  amount: int
+  description: str
 
 
-def normalize_truck_type_from_recommended_ton(recommended_ton) -> str:
-    t = Decimal(str(recommended_ton or "0"))
-    if t <= Decimal("1.0"):
-        return "1T"
-    if t <= Decimal("2.5"):
-        return "2_5T"
-    if t <= Decimal("5.0"):
-        return "5T"
-    if t <= Decimal("6.0"):
-        return "6T"
-    if t <= Decimal("7.5"):
-        return "7_5T"
-    return "7_5T"
+def _truck_type_rank(truck_type: str) -> float:
+  mapping = {
+      "1T": 1.0,
+      "2_5T": 2.5,
+      "5T": 5.0,
+      "6T": 6.0,
+      "7_5T": 7.5,
+      "10T": 10.0,
+  }
+  return mapping.get(truck_type, 0.0)
 
 
-def build_distance_pricing(
-    *,
-    distance_km: float,
-    recommended_ton,           # estimate.recommended_ton 그대로 넣어도 됨(Decimal/str 모두 OK)
-    rules: List[DistanceFeeRule],
-    price: EstimatePrice,
-) -> int:
-    distance = Decimal(str(distance_km or 0))
-    truck_type = normalize_truck_type_from_recommended_ton(recommended_ton)
+def _normalize_truck_type_for_distance(main_truck_type: str) -> str:
+  """
+  7.5톤 이상이면 '최대 금액' 정책으로 계산
+  - 우선순위 1) 7_5T 룰이 있으면 그걸로 고정
+  - 우선순위 2) 없으면 활성 룰 중 per_unit_amount가 가장 큰 룰 사용
+  """
+  if _truck_type_rank(main_truck_type) >= 7.5:
+      has_7_5 = DistanceFeeRule.objects.filter(truck_type="7_5T", is_active=True).exists()
+      if has_7_5:
+          return "7_5T"
 
-    # rules를 dict로 만들어 lookup
-    rule_by_type: Dict[str, DistanceFeeRule] = {r.truck_type: r for r in rules if r.is_active}
+      # fallback: 활성 룰 중 최대 금액
+      max_rule = (
+          DistanceFeeRule.objects.filter(is_active=True)
+          .order_by("-per_unit_amount")
+          .first()
+      )
+      if max_rule:
+          return max_rule.truck_type
 
-    rule = rule_by_type.get(truck_type)
-    if rule is None:
-        # 룰이 없으면 섹션 0 처리(또는 ValidationError)
-        EstimatePriceSection.objects.create(
-            estimate_price=price,
-            key=EstimatePriceSection.Key.DISTANCE,
-            title="거리 추가 비용",
-            amount=0,
-            description=f"{truck_type} 거리요금 룰 없음",
-        )
-        return 0
+  return main_truck_type
 
-    amount, desc = calc_distance_fee(distance, rule)
 
-    EstimatePriceSection.objects.create(
-        estimate_price=price,
-        key=EstimatePriceSection.Key.DISTANCE,
-        title="거리 추가 비용",
-        amount=amount,
-        description=desc,
-    )
-    return amount
+def _to_float(v) -> float:
+  if v is None:
+    return 0.0
+  if isinstance(v, (int, float)):
+    return float(v)
+  if isinstance(v, Decimal):
+    return float(v)
+  try:
+    return float(v)
+  except Exception:
+    return 0.0
+
+
+def calc_distance_cost(*, distance_km, truck_type: str) -> int:
+  """
+  - base_km 이하: 0원
+  - base_km 초과: (초과분 / unit_km) 올림 × per_unit_amount
+  """
+  km = _to_float(distance_km)
+  if km <= 0:
+      return 0
+
+  rule = (
+      DistanceFeeRule.objects
+      .filter(truck_type=truck_type, is_active=True)
+      .first()
+  )
+  if rule is None:
+      raise DistancePricingError(f"DistanceFeeRule not found (truck_type={truck_type})")
+
+  base_km = float(rule.base_km)
+  unit_km = float(rule.unit_km)
+  per_unit = int(rule.per_unit_amount)
+
+  if km <= base_km:
+      return 0, f"기본 {int(base_km)}km 이내는 추가요금 없음"
+  
+  if unit_km <= 0:
+      raise DistancePricingError(f"unit_km must be > 0 (truck_type={truck_type})")
+
+  excess = km - base_km
+  units = int(math.ceil(excess / unit_km))
+  amount = units * per_unit
+
+  description = (
+    f"{km}km기준, {int(base_km)}km 초과 시 "
+    f"{int(unit_km)}km당 {per_unit:,}원 추가 "
+  )
+  return amount, description

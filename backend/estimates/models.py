@@ -9,7 +9,7 @@ class Estimate(models.Model):
     PACKING = "PACKING", "PACKING"
 
   id = models.BigAutoField(primary_key=True)
-
+  
   move_type = models.CharField(max_length=20, choices=MoveType.choices)
   area = models.IntegerField()  # 평수
 
@@ -18,55 +18,10 @@ class Estimate(models.Model):
   origin_has_elevator = models.BooleanField(default=False)
   origin_use_ladder = models.BooleanField(default=False)
 
-  dest_address = models.TextField()
-  dest_floor = models.IntegerField()
-  dest_has_elevator = models.BooleanField(default=False)
-  dest_use_ladder = models.BooleanField(default=False)
-
-  distance_km = models.DecimalField(max_digits=7, decimal_places=2)
-
-  special_item_count = models.IntegerField(
-    default=0,
-    help_text="특수가구 개수"
-  )
-  boxes_count = models.PositiveSmallIntegerField(
-    null=True, blank=True,
-    help_text="평수 룰로 산정된 박스 개수(boxes_avg)"
-  )
-  boxes_description = models.CharField(
-    max_length=255,
-    null=True, blank=True,
-    help_text="박스 산정 근거 설명"
-  )
-  recommended_ton = models.DecimalField(
-    max_digits=4,
-    decimal_places=1,
-    help_text="추천 적재 톤수 (예: 6.0, 7.5, 10.0)"
-  )
-  total_cbm = models.DecimalField(
-    max_digits=9, decimal_places=2,
-    null=True, blank=True,
-    validators=[MinValueValidator(0)],
-    help_text="가구+박스 총 부피(CBM)"
-  )
-  truck_capacity_cbm = models.DecimalField(
-      max_digits=9, decimal_places=2,
-      null=True, blank=True,
-      validators=[MinValueValidator(0)],
-      help_text="선택된 트럭 조합 총 용량(CBM)"
-  )
-  load_factor_pct = models.DecimalField(
-      max_digits=5, decimal_places=1,
-      null=True, blank=True,
-      validators=[MinValueValidator(0)],
-      help_text="총 적재율(%)"
-  )
-  remaining_cbm = models.DecimalField(
-      max_digits=9, decimal_places=2,
-      null=True, blank=True,
-      validators=[MinValueValidator(0)],
-      help_text="총 남은 용량(CBM)"
-  )
+  dest_address = models.TextField(null=True, blank=True)
+  dest_floor = models.IntegerField(null=True, blank=True)
+  dest_has_elevator = models.BooleanField(null=True, blank=True, default=False)
+  dest_use_ladder = models.BooleanField(null=True, blank=True, default=False)
 
   created_at = models.DateTimeField(auto_now_add=True)
 
@@ -80,7 +35,8 @@ class Estimate(models.Model):
     ]
 
   def __str__(self):
-    return f"Estimate#{self.id} ({self.move_type})"
+    return f"Estimate#{self.id} | {self.move_type} | {self.area}"
+
 
 
 class EstimateTruckPlan(models.Model):
@@ -93,8 +49,8 @@ class EstimateTruckPlan(models.Model):
     db_index=True,
   )
 
-  truck_type = models.CharField(max_length=20)  # 5T / 1T 등
-  truck_count = models.IntegerField()
+  truck_type = models.CharField(max_length=20) 
+  truck_count = models.IntegerField(default=1)
 
   inner_w_cm = models.DecimalField(max_digits=7, decimal_places=2)
   inner_d_cm = models.DecimalField(max_digits=7, decimal_places=2)
@@ -136,6 +92,7 @@ class EstimateTruckPlan(models.Model):
 
   def __str__(self):
     return f"TruckPlan#{self.id} est={self.estimate_id} {self.truck_type}x{self.truck_count}"
+
 
 
 class EstimateRoom(models.Model):
@@ -181,6 +138,7 @@ class EstimateRoom(models.Model):
 
   def __str__(self):
     return f"Room#{self.id} est={self.estimate_id} order={self.sort_order}"
+
 
 
 class EstimateItem(models.Model):
@@ -238,20 +196,76 @@ class EstimateItem(models.Model):
 
 class EstimatePrice(models.Model):
   id = models.BigAutoField(primary_key=True)
-
+  
   estimate = models.OneToOneField(
     "estimates.Estimate",
     on_delete=models.CASCADE,
     related_name="price",
+    help_text="총 요금"
   )
 
-  total_amount = models.IntegerField()
+  distance_km = models.DecimalField(
+    max_digits=7, decimal_places=2,
+    null=True, blank=True,
+    validators=[MinValueValidator(0)],
+    help_text="거리(km)"
+  )
+  recommended_ton = models.DecimalField(
+    max_digits=4,
+    decimal_places=1,
+    null=True, blank=True,
+    validators=[MinValueValidator(0)],
+    help_text="추천 적재 톤수 (예: 6.0, 7.5, 10.0)"
+  )
+  total_cbm = models.DecimalField(
+    max_digits=9, decimal_places=2,
+    null=True, blank=True,
+    validators=[MinValueValidator(0)],
+    help_text="가구+박스 총 부피(CBM)"
+  )
+  truck_capacity_cbm = models.DecimalField(
+    max_digits=9, decimal_places=2,
+    null=True, blank=True,
+    validators=[MinValueValidator(0)],
+    help_text="선택된 트럭 조합 총 용량(CBM)"
+  )
+  load_factor_pct = models.DecimalField(
+    max_digits=5, decimal_places=1,
+    null=True, blank=True,
+    validators=[MinValueValidator(0)],
+    help_text="총 적재율(%)"
+  )
+  remaining_cbm = models.DecimalField(
+    max_digits=9, decimal_places=2,
+    null=True, blank=True,
+    validators=[MinValueValidator(0)],
+    help_text="총 남은 용량(CBM)"
+  )
+  special_item_count = models.IntegerField(
+    default=0,
+    help_text="특수가구 개수"
+  )
+
+  boxes_count = models.PositiveSmallIntegerField(
+    null=True, blank=True,
+    help_text="평수 룰로 산정된 박스 개수(boxes_avg)"
+  )
+  boxes_description = models.CharField(
+    max_length=255,
+    null=True, blank=True,
+    help_text="박스 산정 근거 설명"
+  )
+  
+  total_amount = models.IntegerField(validators=[MinValueValidator(0)])
   calculated_at = models.DateTimeField(auto_now_add=True)
 
   class Meta:
     db_table = "estimate_price"
     verbose_name = "견적 비용"
     verbose_name_plural = "5. 견적 비용 목록"
+    indexes = [
+      models.Index(fields=["calculated_at"]),
+    ]
 
   def __str__(self):
     return f"Price#{self.id} est={self.estimate_id} total={self.total_amount}"
@@ -276,7 +290,7 @@ class EstimatePriceSection(models.Model):
 
   key = models.CharField(max_length=20, choices=Key.choices, db_index=True)
   title = models.CharField(max_length=50)
-  amount = models.IntegerField()
+  amount = models.IntegerField(validators=[MinValueValidator(0)])
   description = models.CharField(max_length=255, null=True, blank=True)
 
   class Meta:
@@ -318,7 +332,7 @@ class EstimatePriceLine(models.Model):
   )
 
   name_kr = models.CharField(max_length=64, null=True, blank=True)
-  amount = models.IntegerField()
+  amount = models.IntegerField(validators=[MinValueValidator(0)])
   description = models.CharField(max_length=255, null=True, blank=True)
 
   class Meta:

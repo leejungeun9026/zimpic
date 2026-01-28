@@ -1,132 +1,177 @@
-# estimates/services/pricing_access.py
 from __future__ import annotations
 
-from typing import List, Optional
+from dataclasses import dataclass
+from typing import List, Literal, Optional, Tuple
 
-from estimates.models import EstimatePrice, EstimatePriceSection, EstimatePriceLine, EstimateTruckPlan
 from policy.models import LadderFeeRule, StairsFeeRule
 
+Scope = Literal["ORIGIN", "DEST"]
+SectionKey = Literal["LADDER", "STAIRS"]
 
-def _truck_type_rank(truck_type: str) -> float:
-    mapping = {"1T": 1.0, "2_5T": 2.5, "5T": 5.0, "6T": 6.0, "7_5T": 7.5, "10T": 10.0}
-    return mapping.get(truck_type, 0.0)
+class AccessPricingError(Exception):
+  pass
 
+@dataclass
+class AccessLine:
+  scope : Scope
+  amount: int
+  description: str = ""
+  name_kr: Optional[str] = None
 
-def _pick_ladder_group(plans: List[EstimateTruckPlan]) -> str:
-    """
-    사다리차 그룹은 '가장 큰 트럭 기준'으로 선택.
-    6T/7.5T/10T는 룰이 없다면 5T로 매핑.
-    """
-    if not plans:
-        return "1T"
-    main = max((p.truck_type for p in plans if p.truck_type), key=_truck_type_rank, default="1T")
-    if main in ("6T", "7_5T", "10T"):
-        return "5T"
-    return main
+_TRUCK_RANK = {"1T": 1.0, "2_5T": 2.5, "5T": 5.0, "6T": 6.0, "7_5T": 7.5, "10T": 10.0}
 
-
-def _pick_ladder_rule(group: str, floor: int, rules: List[LadderFeeRule]) -> Optional[LadderFeeRule]:
-    candidates = [r for r in rules if r.ladder_truck_group == group and r.floor_from <= floor <= r.floor_to]
-    if not candidates:
-        return None
-    return min(candidates, key=lambda r: (r.floor_to - r.floor_from))
+def _ton_label(truck_type: str) -> str:
+  # "7_5T" -> "7.5톤", "5T" -> "5톤", "10T" -> "10톤"
+  if truck_type.endswith("T"):
+    core = truck_type[:-1]          # "7_5"
+    core = core.replace("_", ".")   # "7.5"
+    return f"{core}톤"
+  return truck_type
 
 
-def _pick_stairs_rule(floor: int, rules: List[StairsFeeRule]) -> Optional[StairsFeeRule]:
-    candidates = [r for r in rules if r.floor_from <= floor <= r.floor_to]
-    if not candidates:
-        return None
-    return min(candidates, key=lambda r: (r.floor_to - r.floor_from))
+def _scope_label(scope: Scope) -> str:
+  return "출발지" if scope == "ORIGIN" else "도착지"
 
 
-def _calc_stairs_amount(floor: int, per_floor_amount: int) -> int:
-    # 1층은 0으로 보는 정책(층-1)
-    effective = max(floor - 1, 0)
-    return effective * int(per_floor_amount)
+def _normalize_ladder_group(main_truck_type: str) -> str:
+  """
+  사다리차 요금표는 5T 이상만 존재, 5T 미만은 5T 기준으로 조회
+  """
+  ton = _TRUCK_RANK.get(main_truck_type)
+  if ton is None:
+    # 모르는 타입이면 5T로 처리
+    return "5T"
+  return "5T" if ton < 5.0 else main_truck_type
 
 
-def build_access_pricing(
-    *,
-    price: EstimatePrice,
-    plans: List[EstimateTruckPlan],
-    ladder_rules: List[LadderFeeRule],
-    stairs_rules: List[StairsFeeRule],
-    origin_floor: int,
-    origin_has_elevator: bool,
-    origin_use_ladder: bool,
-    dest_floor: int,
-    dest_has_elevator: bool,
-    dest_use_ladder: bool,
-) -> int:
-    ladder_group = _pick_ladder_group(plans)
 
-    ladder_total = 0
-    stairs_total = 0
-    ladder_lines: List[EstimatePriceLine] = []
-    stairs_lines: List[EstimatePriceLine] = []
+def calc_access_cost(
+  *,
+  scope: Literal["ORIGIN", "DEST"],
+  floor: int,
+  has_elevator: bool,
+  use_ladder: bool,
+  main_truck_type: str,
+) -> Tuple[SectionKey, int, List[AccessLine]]:
+  """
+  접근비용 계산 (한쪽 기준: 출발지 or 도착지)
+  반환: (section_key, amount, lines)
 
-    def handle(scope: str, floor: int, has_elevator: bool, use_ladder: bool):
-        nonlocal ladder_total, stairs_total
+  우선순위:
+    Case 1) 사다리 사용(use_ladder=True) -> ladder_fee_rule (엘베 여부 무관)
+    Case 2) 사다리 미사용 + 엘리베이터 가능 -> 0
+    Case 3) 사다리 미사용 + 엘리베이터 불가 -> stairs_fee_rule
+  """ 
 
-        if has_elevator:
-            return
+  # 톤수 가져오기
+  ladder_group = _normalize_ladder_group(main_truck_type)
+  ton = _ton_label(ladder_group)
+  label = _scope_label(scope)
+  
+  # -----------------------------
+  # Case 1) 사다리 사용
+  # -----------------------------
+  # - ladder_truck_group(톤수) + floor_from~floor_to 구간으로 base_amount 조회
+  # - 5톤 미만이면 5T 그룹으로 조회
+  # - floor <= 1 이면 사다리차 미사용으로 보고 0원 반환
+  # - floor > 24 이면 해당 톤수에서 가장 높은 구간(최대 floor_to)의 금액을 사용하고 코멘트 추가
 
-        if use_ladder:
-            rule = _pick_ladder_rule(ladder_group, floor, ladder_rules)
-            if not rule:
-                return
-            amount = int(rule.base_amount)
-            ladder_total += amount
-            ladder_lines.append(
-                EstimatePriceLine(
-                    estimate_price_section=None,
-                    scope=scope,  # "ORIGIN"/"DEST"
-                    amount=amount,
-                    description=f"{'출발지' if scope=='ORIGIN' else '도착지'} {floor}층 기준",
-                )
-            )
-        else:
-            rule = _pick_stairs_rule(floor, stairs_rules)
-            if not rule:
-                return
-            amount = _calc_stairs_amount(floor, int(rule.per_floor_amount))
-            stairs_total += amount
-            stairs_lines.append(
-                EstimatePriceLine(
-                    estimate_price_section=None,
-                    scope=scope,
-                    amount=amount,
-                    description=f"{'출발지' if scope=='ORIGIN' else '도착지'} {floor}층 기준",
-                )
-            )
-
-    handle("ORIGIN", origin_floor, origin_has_elevator, origin_use_ladder)
-    handle("DEST", dest_floor, dest_has_elevator, dest_use_ladder)
-
-    total = 0
-
-    if ladder_total > 0:
-        sec = EstimatePriceSection.objects.create(
-            estimate_price=price,
-            key=EstimatePriceSection.Key.LADDER,
-            title="사다리차 비용",
-            amount=ladder_total,
+  if use_ladder:
+    # 1층 사다리차 미적용, 0원 반환
+    if floor <= 1:
+      return "LADDER", 0, [
+        AccessLine(
+          scope=scope,
+          amount=0,
+          description="1층은 사다리차 미사용",
         )
-        for ln in ladder_lines:
-            ln.estimate_price_section = sec
-        EstimatePriceLine.objects.bulk_create(ladder_lines)
-        total += ladder_total
+      ]
 
-    if stairs_total > 0:
-        sec = EstimatePriceSection.objects.create(
-            estimate_price=price,
-            key=EstimatePriceSection.Key.STAIRS,
-            title="계단 비용",
-            amount=stairs_total,
+    # 기본 조회
+    rule = (
+      LadderFeeRule.objects
+      .filter(
+        ladder_truck_group=ladder_group,
+        floor_from__lte=floor,
+        floor_to__gte=floor,
+        is_active=True
+      )
+      .order_by("floor_from")
+      .first()
+    )
+
+    # 사다리차 DB보다 높은 층수(24층 이상) 처리
+    extra_comment = ""
+    if rule is None:
+      top_rule = (
+        LadderFeeRule.objects
+        .filter(
+          ladder_truck_group=ladder_group,
+          is_active=True
         )
-        for ln in stairs_lines:
-            ln.estimate_price_section = sec
-        EstimatePriceLine.objects.bulk_create(stairs_lines)
-        total += stairs_total
+        .order_by("-floor_to")
+        .first()
+      )
+      if top_rule is None:
+        raise AccessPricingError(f"LadderFeeRule not found (group={ladder_group})")
 
-    return total
+      rule = top_rule
+      extra_comment = (
+        f" ({rule.floor_to}층 이상은 별도 협의가 필요해요. "
+        f"현재 견적은 최고층수 기준으로 계산했어요.)"
+      )
+
+
+    amt = int(rule.base_amount)
+    description = (
+      f"{ton} 기준 {label} {floor}층 사다리차 비용"
+      f"{extra_comment}"
+    )
+        
+    return "LADDER", amt, [
+      AccessLine(
+        scope=scope,
+        amount=amt,
+        description=description
+      )
+    ]
+
+  # -----------------------------
+  # Case 2) 사다리 미사용 + 엘리베이터 가능 => 0
+  # -----------------------------
+  if has_elevator:
+    return "STAIRS", 0, []
+
+
+
+  # -----------------------------
+  # Case 3) 사다리 미사용 + 엘리베이터 불가 => 계단 비용
+  # -----------------------------
+  if floor <= 1:
+    return "STAIRS", 0, []
+
+  rule = (
+    StairsFeeRule.objects
+    .filter(
+      floor_from__lte=floor, 
+      floor_to__gte=floor, 
+      is_active=True
+    )
+    .order_by("floor_from")
+    .first()
+  )
+
+  if rule is None:
+    raise AccessPricingError(f"StairsFeeRule not found (floor={floor})")
+
+  # 층당 금액 계산
+  per_floor = int(rule.per_floor_amount)
+  amt = (floor - 1) * per_floor
+
+  return "STAIRS", amt, [
+    AccessLine(
+      scope=scope,
+      amount=amt,
+      description=f"{ton} 기준 {label} {floor}층 계단 비용",
+    )
+  ]
