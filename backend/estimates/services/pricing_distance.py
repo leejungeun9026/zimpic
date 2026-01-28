@@ -4,7 +4,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import List, Optional, Tuple
+from typing import Tuple
 
 from policy.models import DistanceFeeRule
 
@@ -66,15 +66,18 @@ def _to_float(v) -> float:
   except Exception:
     return 0.0
 
+from typing import Tuple
 
-def calc_distance_cost(*, distance_km, truck_type: str) -> int:
+
+
+def calc_distance_cost(*, distance_km, truck_type: str) -> Tuple[int, str]:
   """
   - base_km 이하: 0원
   - base_km 초과: (초과분 / unit_km) 올림 × per_unit_amount
   """
   km = _to_float(distance_km)
   if km <= 0:
-      return 0
+      return 0, "거리 정보 없음(0km) → 추가요금 0원"
 
   rule = (
       DistanceFeeRule.objects
@@ -90,7 +93,7 @@ def calc_distance_cost(*, distance_km, truck_type: str) -> int:
 
   if km <= base_km:
       return 0, f"기본 {int(base_km)}km 이내는 추가요금 없음"
-  
+
   if unit_km <= 0:
       raise DistancePricingError(f"unit_km must be > 0 (truck_type={truck_type})")
 
@@ -99,7 +102,7 @@ def calc_distance_cost(*, distance_km, truck_type: str) -> int:
   amount = units * per_unit
 
   description = (
-    f"{km}km기준, {int(base_km)}km 초과 시 "
-    f"{int(unit_km)}km당 {per_unit:,}원 추가 "
+    f"{km:.2f}km 기준, {int(base_km)}km 초과분 {excess:.2f}km → "
+    f"{int(unit_km)}km 단위 {units}회 × {per_unit:,}원"
   )
   return amount, description

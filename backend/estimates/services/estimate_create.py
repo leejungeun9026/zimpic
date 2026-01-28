@@ -61,9 +61,17 @@ def create_estimate(data: Dict[str, Any]) -> Estimate:
   # ====================================
   origin_address = data["origin_address"]   # 출발지 주소
   dest_address = _get(data, "dest_address") # 도착지 주소
+  
+  if dest_address is not None and str(dest_address).strip() == "" :
+    dest_address = None
+  
+  dest_floor = _get(data, "dest_floor")  # 없으면 None
+  dest_has_elevator = _get(data, "dest_has_elevator", None)
+  dest_use_ladder = _get(data, "dest_use_ladder", None)
+
 
   # dest가 없거나 빈 문자열이면 기본거리
-  if not dest_address or str(dest_address).strip() == "":
+  if dest_address is None:
     distance_km = 0.0
   else:
     try:
@@ -86,9 +94,9 @@ def create_estimate(data: Dict[str, Any]) -> Estimate:
     origin_use_ladder=data["origin_use_ladder"],
 
     dest_address=dest_address,
-    dest_floor=data["dest_floor"],
-    dest_has_elevator=data["dest_has_elevator"],
-    dest_use_ladder=data["dest_use_ladder"],
+    dest_floor=dest_floor,
+    dest_has_elevator=dest_has_elevator,
+    dest_use_ladder=dest_use_ladder,
   )
 
 

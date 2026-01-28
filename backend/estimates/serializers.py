@@ -63,10 +63,10 @@ class EstimateCreateSerializer(serializers.Serializer):
   origin_has_elevator = serializers.BooleanField()
   origin_use_ladder = serializers.BooleanField()
 
-  dest_address = serializers.CharField()
-  dest_floor = serializers.IntegerField(min_value=0)
-  dest_has_elevator = serializers.BooleanField()
-  dest_use_ladder = serializers.BooleanField()
+  dest_address = serializers.CharField(required=False, allow_null=True)
+  dest_floor = serializers.IntegerField(required=False, allow_null=True, min_value=0)
+  dest_has_elevator = serializers.BooleanField(required=False, allow_null=True)
+  dest_use_ladder = serializers.BooleanField(required=False, allow_null=True)
 
   rooms = EstimateRoomInputSerializer(many=True)
 
