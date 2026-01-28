@@ -5,4 +5,4 @@ from .models import Furniture
 class FurnitureSerializer(serializers.ModelSerializer):
   class Meta:
     model = Furniture
-    exclude = ("yolo_id", "padding_cm", "needs_disassembly", "stackable", "can_stack_on_top")
+    exclude = ("yolo_id", "padding_cm", "stackable", "can_stack_on_top")
