@@ -25,62 +25,86 @@ class SpecialLine:
 
 def calc_special_cost(ctx: EstimateContext) -> Tuple[int, int, List[SpecialLine]]:
   """
-  특수 옵션 비용 산출 (수량 반영)
-  - needs_disassembly=True 인 아이템만 대상
+  특수 옵션 비용 산출
+  전제: SpecialItemFee에 있는 furniture만 대상
+
+  규칙:
+  - Furniture.needs_disassembly == True:
+      요청(EstimateItem.needs_disassembly)이 True인 개수만 과금
+  - Furniture.needs_disassembly == False:
+      요청과 무관하게 전체 개수 과금
+
   - 동일 furniture는 qty로 합산
-  - amount = qty * unit_amount
-  - special_item_count = "특수옵션 적용된 아이템 수(총 개수)" 로 반환
+  - amount = charged_qty * unit_amount
+  - special_item_count = charged_qty 총합(실제 과금된 개수)
   """
   items: List[EstimateItem] = ctx.items or []
   if not items:
     return (0, 0, [])
 
-  targets = [it for it in items if bool(getattr(it, "needs_disassembly", False))]
-  if not targets:
+  # furniture_id 있는 아이템만
+  items = [it for it in items if it.furniture_id]
+  if not items:
     return (0, 0, [])
 
-  # 1) furniture_id 기준 수량 집계
-  # (EstimateItem에 furniture_id는 FK id로 항상 있음)
-  fid_counter = Counter([it.furniture_id for it in targets if it.furniture_id])
-  furniture_ids = set(fid_counter.keys())
+  # 1) 전체 개수 집계
+  total_counter = Counter(it.furniture_id for it in items)
 
+  furniture_ids = set(total_counter.keys())
 
-  # 2) 정책 룰 맵 구성 (N+1 방지)
-  rules_by_fid = {
+  # 2) 정책 룰 로딩 (SpecialItemFee 존재하는 furniture만 대상)
+  rules_by_fid: Dict[int, SpecialItemFee] = {
     r.furniture_id: r
     for r in SpecialItemFee.objects.filter(is_active=True, furniture_id__in=furniture_ids)
   }
+  if not rules_by_fid:
+    return (0, 0, [])
 
   total_amount = 0
   special_item_count = 0
   lines: List[SpecialLine] = []
 
-
-  # 3) furniture_id 단위로 라인 생성 (qty * unit_amount)
-  for fid, qty in fid_counter.items():
+  # 3) furniture_id 단위로 계산
+  for fid, qty_total in total_counter.items():
     rule = rules_by_fid.get(fid)
-
     if rule is None:
-      raise SpecialPricingError(f"SpecialItemFee not found for furniture_id={fid}")
+      continue  # SpecialItemFee 없는 건 제외
+
+    # 해당 fid 아이템들
+    group = [it for it in items if it.furniture_id == fid]
+    any_item = group[0] if group else None
+    furniture = getattr(any_item, "furniture", None)
+
+    name_kr = furniture.name_kr if furniture else ""
+
+    # Furniture 정책 플래그 (없으면 False 취급)
+    furniture_needs_disassembly = bool(getattr(furniture, "needs_disassembly", False))
+
+    if furniture_needs_disassembly:
+      # 요청에서 needs_disassembly=True인 개수만 과금
+      charged_qty = sum(1 for it in group if bool(getattr(it, "needs_disassembly", False)))
+    else:
+      # 요청과 무관하게 전체 과금
+      charged_qty = int(qty_total)
 
     unit_amount = int(rule.unit_amount or 0)
-    amount = int(qty) * unit_amount
-
-    any_item = next((it for it in targets if it.furniture_id == fid), None)
-    name_kr = any_item.furniture.name_kr if any_item and any_item.furniture else ""
+    amount = int(charged_qty) * unit_amount
 
     lines.append(
       SpecialLine(
         furniture_id=fid,
         name_kr=name_kr,
-        qty=int(qty),
+        qty=int(qty_total),          # 전체 개수(응답용)
         unit_amount=unit_amount,
-        amount=amount,
-        description=f"{rule.description} 개당 {unit_amount}원 추가",
+        amount=amount,               # 과금된 개수 기준 금액
+        description=(
+          f"{rule.description} 개당 {unit_amount}원"
+        ),
       )
     )
 
     total_amount += amount
-    special_item_count += int(qty)
+    special_item_count += int(charged_qty)
 
+  lines.sort(key=lambda x: x.furniture_id)
   return (total_amount, special_item_count, lines)
