@@ -87,6 +87,9 @@ def calc_special_cost(ctx: EstimateContext) -> Tuple[int, int, List[SpecialLine]
       # 요청과 무관하게 전체 과금
       charged_qty = int(qty_total)
 
+    if charged_qty == 0:
+      continue
+
     unit_amount = int(rule.unit_amount or 0)
     amount = int(charged_qty) * unit_amount
 
