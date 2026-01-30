@@ -15,12 +15,12 @@ export default function ExtraItemAdder({
         className="form-select form-select-sm"
         style={{ maxWidth: 160 }}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(Number(e.target.value))}
         disabled={loading}
       >
         {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
+          <option key={opt.id} value={opt.id}>
+            {opt.name_kr}
           </option>
         ))}
       </select>
@@ -28,7 +28,7 @@ export default function ExtraItemAdder({
       <button
         className="btn btn-outline-secondary btn-sm"
         onClick={onAdd}
-        disabled={loading}
+        disabled={loading || !value}
       >
         추가하기
       </button>

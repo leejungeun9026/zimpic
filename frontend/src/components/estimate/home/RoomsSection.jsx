@@ -1,3 +1,4 @@
+// rooms 배열을 받아서 RoomCard로 풀어놓고, 추가 버튼 하나 붙이는 컨테이너
 import RoomCard from "./RoomCard";
 
 export default function RoomsSection({

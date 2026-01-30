@@ -1,11 +1,10 @@
-export default function RoomItemsSummary({ roomSummaries, thumbUrls, vehicleText }) {
+export default function RoomItemsSummary({ roomSummaries, thumbUrls, vehicleText, specialFurnitureIdSet }) {
   return (
     <div className="card mb-4">
       <div className="card-header bg-white fw-bold">이삿짐 정보</div>
       <div className="card-body">
         {roomSummaries.map((r, idx) => {
-          const entries = Object.entries(r.grouped);
-          const top3 = entries.slice(0, 3);
+          const entries = Object.values(r.grouped);
 
           return (
             <div
@@ -42,33 +41,34 @@ export default function RoomItemsSummary({ roomSummaries, thumbUrls, vehicleText
 
                 {/* 품목/치수 */}
                 <div className="flex-grow-1">
-                  {top3.length === 0 ? (
+                  {entries.length === 0 ? (
                     <div className="text-muted small">선택된 짐이 없습니다.</div>
                   ) : (
-                    top3.map(([name, count]) => {
-                      const sample = r.items.find((i) => i.name === name) || {};
-                      const w = sample.width ?? 300;
-                      const h = sample.height ?? 200;
-                      const d = sample.depth ?? 100;
+                    entries.map((g) => {
+                      const w = g.width ?? 300;
+                      const h = g.height ?? 200;
+                      const d = g.depth ?? 100;
 
-                      const hasAssembly = Boolean(sample.assemblyRequired);
+                      // 분해/조립 여부는 needsDisassembly로 판단
+                      const hasDisassembly = Boolean(g.needsDisassembly);
+                      const isSpecial = specialFurnitureIdSet instanceof Set &&
+                      g.furnitureId != null &&
+                      specialFurnitureIdSet.has(Number(g.furnitureId));
 
                       return (
                         <div
-                          key={name}
+                          key={g.key}
                           className="d-flex justify-content-between small py-1 border-bottom"
                         >
                           <span>
-                            {name} {count}개{" "}
-                            {hasAssembly ? (
+                            {g.name} {g.count}개{" "}
+                            {hasDisassembly ? (
                               <span className="badge bg-secondary ms-2">
                                 분해/조립
                               </span>
                             ) : null}
-                            {sample.isSpecial ? (
-                              <span className="badge bg-warning text-dark ms-2">
-                                특수
-                              </span>
+                            {isSpecial ? (
+                             <span className="badge bg-warning text-dark ms-2">특수가구</span>
                             ) : null}
                           </span>
                           <span className="text-muted">

@@ -1,3 +1,4 @@
+// 방 하나에 대한 UI 조작 담당
 import { useRef } from "react";
 
 export default function RoomCard({
@@ -11,11 +12,13 @@ export default function RoomCard({
   onAddImages,
   onRemoveImage,
 }) {
+  // 이미지 가져오기 버튼이나 업로드 영역 클릭시 숨겨진 input을 .click()으로 열어주는 방식
   const fileInputRef = useRef(null);
   const firstImageId = room.images?.[0]?.id;
 
   const openFilePicker = () => fileInputRef.current?.click();
 
+  // 이미지 업로드 처리 (클릭 업로드)
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files || []).filter((f) =>
       f.type.startsWith("image/")
@@ -25,6 +28,7 @@ export default function RoomCard({
     e.target.value = "";
   };
 
+  // 드래그 & 드롭 업로드
   const handleDrop = (e) => {
     e.preventDefault();
     const files = Array.from(e.dataTransfer.files || []).filter((f) =>
@@ -90,7 +94,7 @@ export default function RoomCard({
             type="button"
             className="btn btn-dark btn-sm mt-2"
             onClick={(e) => {
-              e.stopPropagation();
+              e.stopPropagation(); // 버튼 클릭이 바깥 div 클릭까지 전파되지 않게 막음
               openFilePicker();
             }}
           >

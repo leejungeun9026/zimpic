@@ -1,3 +1,5 @@
+// 집 평수를 숫자 하나로 입력받는 UI
+
 export default function SizeRangeSlider({ value, onChange }) {
   return (
     <>

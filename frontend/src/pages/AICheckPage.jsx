@@ -1,9 +1,12 @@
+// AI 분석을 실행하고 사용자가 '짐 목록'을 확정하는 페이지
+
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import StepIndicator from "../components/layout/StepIndicator";
 import { useEstimateStore } from "../store/estimateStore";
 
 import RoomAnalysisSection from "../components/estimate/ai/RoomAnalysisSection";
+import { fetchFurniturePolicy } from "../services/policyApi";
 
 export default function AICheckPage() {
   const navigate = useNavigate();
@@ -16,19 +19,23 @@ export default function AICheckPage() {
   const toggleItem = useEstimateStore((s) => s.toggleItem);
   const updateDetectedItem = useEstimateStore((s) => s.updateDetectedItem);
   const addManualItem = useEstimateStore((s) => s.addManualItem);
+  const removeManualItem = useEstimateStore((s) => s.removeManualItem);
 
-  // ✅ 이미지가 있는 공간만 섹션으로 보여주기
+  // policy를 store에 넣는 액션 (이거 없으면 setFurniturePolicyList is not defined 에러)
+  const setFurniturePolicyList = useEstimateStore((s) => s.setFurniturePolicyList);
+
+  // 이미지가 있는 공간만 섹션으로 보여주기
   const roomsWithImages = useMemo(() => {
     return (rooms ?? []).filter((r) => (r.images?.length ?? 0) > 0);
   }, [rooms]);
 
-  // (임시) "목록에 없는 짐" 드롭다운용
-  const EXTRA_ITEM_OPTIONS = ["침대", "냉장고", "세탁기", "전자레인지", "책상", "의자"];
-  const [extraItem, setExtraItem] = useState(EXTRA_ITEM_OPTIONS[0]);
+  // 수동 추가 가능한 짐 목록
+  const [furnitureList, setFurnitureList] = useState([]);
+  const [extraItemId, setExtraItemId] = useState(null);
 
   /* ---------------- 이미지 preview 생성 / 해제 ---------------- */
   const coverPreviewByRoomId = useMemo(() => {
-    const map = new Map(); // roomId -> url
+    const map = new Map();
     roomsWithImages.forEach((room) => {
       const first = room.images?.[0]?.file;
       if (first) map.set(room.id, URL.createObjectURL(first));
@@ -51,7 +58,7 @@ export default function AICheckPage() {
     if (!hasAnyResult) analyzeImages?.();
   }, [rooms, analysisByRoom, analyzeImages]);
 
-  // ✅ 다음 단계: "체크된 아이템이 전체에서 1개라도" 있어야 통과
+  // 체크된 아이템이 1개라도 있어야 통과
   const totalCheckedCount = useMemo(() => {
     return Object.values(analysisByRoom ?? {})
       .flat()
@@ -72,10 +79,35 @@ export default function AICheckPage() {
   };
 
   const handleAddExtra = (roomId) => {
-    addManualItem(roomId, extraItem);
+    const furniture = furnitureList.find((f) => f.id === extraItemId);
+    if (!furniture) return;
+
+    addManualItem(roomId, furniture);
   };
 
-  // ✅ 이미지가 있는 공간이 없으면 방어 (로딩보다 먼저)
+  useEffect(() => {
+    fetchFurniturePolicy()
+      .then((data) => {
+        const list = data ?? [];
+        setFurnitureList(list);
+
+        // store에도 넣어줘야 수동추가(에어컨→실외기 자동생성) 가능
+        setFurniturePolicyList(list);
+
+        if (list.length > 0) setExtraItemId(list[0].id);
+      })
+      .catch((e) => {
+        console.error("furniture policy error", e);
+        alert("짐 목록을 불러오지 못했습니다.");
+      });
+  }, [setFurniturePolicyList]);
+
+  const furnitureById = useMemo(() => {
+    const map = new Map();
+    (furnitureList ?? []).forEach((f) => map.set(f.id, f));
+    return map;
+  }, [furnitureList]);
+
   if (roomsWithImages.length === 0) {
     return (
       <div className="container py-4">
@@ -108,7 +140,6 @@ export default function AICheckPage() {
           <h5 className="mb-1 fw-bold">분석 목록</h5>
         </div>
 
-        {/* ✅ room별 섹션 반복 */}
         {roomsWithImages.map((room) => {
           const roomId = room.id;
           const detectedItems = analysisByRoom?.[roomId] ?? [];
@@ -122,17 +153,31 @@ export default function AICheckPage() {
               coverUrl={coverUrl}
               loading={loading}
               detectedItems={detectedItems}
-              extraOptions={EXTRA_ITEM_OPTIONS}
-              extraItem={extraItem}
-              onChangeExtraItem={setExtraItem}
+              extraOptions={furnitureList}
+              extraItem={extraItemId ?? ""}
+              onChangeExtraItem={setExtraItemId}
               onAddExtraItem={() => handleAddExtra(roomId)}
               onToggleItem={toggleItem}
               onSizeChange={handleSizeChange}
+              onRemoveManualItem={removeManualItem}
+              furnitureById={furnitureById}
+              onUpdateItem={(rid, itemId, patch) =>
+                updateDetectedItem(rid, itemId, patch)
+              }
             />
           );
         })}
 
-        {/* 버튼 */}
+        <div className="border rounded-3 p-3 mt-4 mb-3" style={{ background: "#f8f9fa" }}>
+          <div className="fw-semibold mb-2">참고사항</div>
+          <ul className="mb-0 small text-muted ps-3" style={{ listStyleType: "disc" }}>
+            <li>AI 분석 결과는 업로드된 대표 이미지 기준으로 산출됩니다.</li>
+            <li>사진에 보이지 않는 짐은 직접 추가해 주세요.</li>
+            <li>짐 크기·개수는 실제 방문 견적 시 조정될 수 있습니다.</li>
+            <li>선택하지 않은 항목은 최종 견적에 포함되지 않습니다.</li>
+          </ul>
+        </div>
+
         <div className="d-flex justify-content-between mt-4">
           <button
             className="btn btn-outline-secondary px-4"

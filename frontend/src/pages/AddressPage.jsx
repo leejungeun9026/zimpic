@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import StepIndicator from "../components/layout/StepIndicator";
 import { useEstimateStore } from "../store/estimateStore";
@@ -11,49 +11,60 @@ export default function AddressPage() {
   const moveInfo = useEstimateStore((s) => s.moveInfo);
   const setMoveInfo = useEstimateStore((s) => s.setMoveInfo);
 
-  const handlePrev = () => navigate("/AICheckPage");
-  const handleNext = () => navigate("/ResultPage");
+  const calculateResult = useEstimateStore((s) => s.calculateResult);
+  const loading = useEstimateStore((s) => s.loading);
 
-  // ✅ 도착지 미정 = store 값
+  const handlePrev = () => navigate("/AICheckPage");
+
   const isDestinationUnknown = !!moveInfo.toUnknown;
 
-  // ✅ 도착지 미정이면 도착지 관련 값 초기화(체크박스는 false로)
+  // 도착지 미정이면 도착지 관련 값 초기화
   useEffect(() => {
     if (isDestinationUnknown) {
       setMoveInfo({
         toAddress: "",
-        toFloor: 0,
+        toFloor: 1,
         toElevator: false,
         toLadder: false,
       });
     }
   }, [isDestinationUnknown, setMoveInfo]);
 
-  // ✅ 검증
+  // 검증
   const isValid =
-    moveInfo.fromAddress &&
-    moveInfo.fromAddress.trim().length > 0 &&
+    !!moveInfo.fromAddress?.trim() &&
     moveInfo.fromFloor > 0 &&
     (isDestinationUnknown ||
-      (moveInfo.toAddress &&
-        moveInfo.toAddress.trim().length > 0 &&
-        moveInfo.toFloor > 0));
+      (!!moveInfo.toAddress?.trim() && moveInfo.toFloor > 0));
 
-  /**
-   * ✅ 다음 우편번호 팝업 열기
-   * type: "from" | "to"
-   */
+  const handleNext = async () => {
+    if (!isValid || loading) return;
+
+    setMoveInfo({
+      fromAddress: (moveInfo.fromAddress ?? "").trim(),
+      ...(isDestinationUnknown
+        ? { toAddress: "" }
+        : { toAddress: (moveInfo.toAddress ?? "").trim() }),
+    });
+
+    try {
+      await calculateResult();
+      navigate("/ResultPage");
+    } catch (e) {
+      console.error(e);
+      alert("견적 계산에 실패했습니다.");
+    }
+  };
+
   const openPostcode = (type) => {
     if (!window?.daum?.Postcode) {
-      alert(
-        "주소 검색 스크립트가 로드되지 않았어요. index.html에 postcode 스크립트를 추가했는지 확인해 주세요."
-      );
+      alert("주소 검색 스크립트가 로드되지 않았어요.");
       return;
     }
-
+    // 카카오 우편번호/주소 검색 UI 띄움
     new window.daum.Postcode({
       oncomplete: (data) => {
-        const address = data.roadAddress || data.address || "";
+        const address = (data.roadAddress || data.address || "").trim();
 
         if (type === "from") {
           setMoveInfo({ fromAddress: address });
@@ -66,6 +77,29 @@ export default function AddressPage() {
       },
     }).open();
   };
+
+  // 1층 안내 문구 계산
+  const fromFloorNotice = useMemo(() => {
+    if (moveInfo.fromFloor > 1) return null;
+    if (moveInfo.fromLadder || moveInfo.fromElevator) {
+      return "※ 1층에서는 보통 사다리차·엘리베이터 사용이 필요 없거나 추가 비용이 발생하지 않을 수 있어요.";
+    }
+    return null;
+  }, [moveInfo.fromFloor, moveInfo.fromLadder, moveInfo.fromElevator]);
+
+  const toFloorNotice = useMemo(() => {
+    if (isDestinationUnknown) return null;
+    if (moveInfo.toFloor > 1) return null;
+    if (moveInfo.toLadder || moveInfo.toElevator) {
+      return "※ 1층에서는 보통 사다리차·엘리베이터 사용이 필요 없거나 추가 비용이 발생하지 않을 수 있어요.";
+    }
+    return null;
+  }, [
+    isDestinationUnknown,
+    moveInfo.toFloor,
+    moveInfo.toLadder,
+    moveInfo.toElevator,
+  ]);
 
   return (
     <div className="container my-4">
@@ -83,7 +117,7 @@ export default function AddressPage() {
           idPrefix="from"
           right={null}
           addressValue={moveInfo.fromAddress}
-          addressDisabled={false}
+          addressDisabled={loading}
           onFindAddress={() => openPostcode("from")}
           floorValue={moveInfo.fromFloor}
           onChangeFloor={(v) => setMoveInfo({ fromFloor: v })}
@@ -91,9 +125,9 @@ export default function AddressPage() {
           onChangeElevator={(v) => setMoveInfo({ fromElevator: v })}
           ladderChecked={moveInfo.fromLadder}
           onChangeLadder={(v) => setMoveInfo({ fromLadder: v })}
-          fieldsDisabled={false}
+          fieldsDisabled={loading}
           hint={true}
-          bottomNote={null}
+          bottomNote={fromFloorNotice}
         />
 
         {/* 도착지 */}
@@ -108,6 +142,7 @@ export default function AddressPage() {
                 id="dest-unknown"
                 checked={isDestinationUnknown}
                 onChange={(e) => setMoveInfo({ toUnknown: e.target.checked })}
+                disabled={loading}
               />
               <label className="form-check-label" htmlFor="dest-unknown">
                 도착지 미정
@@ -115,7 +150,7 @@ export default function AddressPage() {
             </div>
           }
           addressValue={moveInfo.toAddress}
-          addressDisabled={isDestinationUnknown}
+          addressDisabled={isDestinationUnknown || loading}
           onFindAddress={() => openPostcode("to")}
           floorValue={moveInfo.toFloor}
           onChangeFloor={(v) => setMoveInfo({ toFloor: v })}
@@ -123,27 +158,31 @@ export default function AddressPage() {
           onChangeElevator={(v) => setMoveInfo({ toElevator: v })}
           ladderChecked={moveInfo.toLadder}
           onChangeLadder={(v) => setMoveInfo({ toLadder: v })}
-          fieldsDisabled={isDestinationUnknown}
+          fieldsDisabled={isDestinationUnknown || loading}
           hint={false}
           bottomNote={
             isDestinationUnknown
               ? "도착지가 미정이면 도착지 정보는 나중에 입력할 수 있어요."
-              : null
+              : toFloorNotice
           }
         />
 
         {/* 버튼 */}
         <div className="d-flex justify-content-between mt-4">
-          <button className="btn btn-outline-secondary px-4" onClick={handlePrev}>
+          <button
+            className="btn btn-outline-secondary px-4"
+            onClick={handlePrev}
+            disabled={loading}
+          >
             이전 단계
           </button>
 
           <button
             className="btn btn-primary px-4"
-            disabled={!isValid}
+            disabled={!isValid || loading}
             onClick={handleNext}
           >
-            견적 확인하기
+            {loading ? "계산 중..." : "견적 확인하기"}
           </button>
         </div>
       </div>

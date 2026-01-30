@@ -7,7 +7,7 @@ import MoveTypeSelector from "../components/estimate/home/MoveTypeSelector";
 import SizeRangeSlider from "../components/estimate/home/SizeRangeSlider";
 import RoomsSection from "../components/estimate/home/RoomsSection";
 
-// ✅ HomePage에만 상수 유지 (constants 파일 없음)
+// 화면에서 선택 가능한 공간 목록
 const SPACE_OPTIONS = ["거실", "주방", "베란다", "다용도실", "방"];
 const UNIQUE_SPACES = ["거실", "주방", "베란다", "다용도실"];
 const MAX_ROOMS = 5; // "방" 최대 5개
@@ -27,20 +27,17 @@ export default function HomePage() {
 
   const { size } = basicInfo;
 
-  /** ✅ 현재 선택된 타입 집합 */
+  /** 현재 선택된 타입 집합 */
   const selectedTypes = useMemo(() => {
     return new Set((rooms ?? []).map((r) => r.type).filter(Boolean));
   }, [rooms]);
 
-  /** ✅ 이미 추가된 "방" 개수 */
+  /** 이미 추가된 "방" 개수 */
   const roomCount = useMemo(() => {
     return (rooms ?? []).filter((r) => r.type === "방").length;
   }, [rooms]);
 
-  /**
-   * ✅ preview URL은 "화면에서만" 만든다 (store에는 File만 저장)
-   * room.images: [{ id, file }]
-   */
+  // preview URL은 "화면에서만" 만든다 (store에는 File만 저장)
   const previewMap = useMemo(() => {
     const map = new Map();
     (rooms ?? []).forEach((room) => {
@@ -59,7 +56,7 @@ export default function HomePage() {
   }, [previewMap]);
 
   /**
-   * ✅ 공간 추가 버튼 로직
+   * 공간 추가 버튼 로직
    * - 기본은 "방"을 추가 (방은 최대 5개)
    * - 방이 꽉 찼으면, 남아있는 유니크 공간(거실/주방/베란다/다용도실) 중 하나를 추가
    * - 다 없으면 alert
@@ -82,7 +79,7 @@ export default function HomePage() {
   };
 
   /**
-   * ✅ 타입 변경(드롭다운)에서도 중복 방지
+   * 타입 변경(드롭다운)에서도 중복 방지
    * - 거실/주방/베란다/다용도실은 중복 선택 불가
    * - 방은 최대 5개
    */
@@ -113,7 +110,7 @@ export default function HomePage() {
     updateRoomType(roomId, nextType);
   };
 
-  // ✅ 버튼 disabled 조건: 더 이상 추가할 타입이 없으면 disable
+  // 버튼 disabled 조건: 더 이상 추가할 타입이 없으면 disable
   const canAddMore = useMemo(() => {
     const hasUniqueLeft = UNIQUE_SPACES.some((t) => !selectedTypes.has(t));
     const canAddRoom = roomCount < MAX_ROOMS;
@@ -162,8 +159,6 @@ export default function HomePage() {
         <div className="fw-bold mb-2 mt-4">공간 선택</div>
         <p className="text-muted mb-4">
           방을 제외한 각 공간(거실,주방,베란다 등)은 한 번만 추가가 가능합니다.
-          <br />
-          공간 전체가 보이도록 찍은 대표 사진 1장을 올려주세요.
         </p>
 
         {(rooms ?? []).length === 0 ? (
@@ -191,7 +186,7 @@ export default function HomePage() {
           />
         )}
 
-        {/* ✅ rooms가 0일 때도 +추가 버튼은 보여야 해서, 위 분기 밖에 둠 */}
+        {/* rooms가 0일 때도 +추가 버튼은 보여야 해서, 위 분기 밖에 둠 */}
         {(rooms ?? []).length === 0 && (
           <RoomsSection
             rooms={[]}
@@ -206,6 +201,16 @@ export default function HomePage() {
             onRemoveImage={removeRoomImage}
           />
         )}
+
+        {/* 참고사항 */}
+        <div className="alert alert-light border rounded-3 mt-4 mb-3">
+          <div className="fw-semibold mb-2">참고사항</div>
+          <ul className="mb-0 small text-muted ps-3" style={{ listStyleType: "disc" }}>
+            <li>공간 전체가 보이도록 대표 사진 1장을 업로드해 주세요.</li>
+            <li>사진이 어둡거나 흔들리면 분석 정확도가 낮아질 수 있어요.</li>
+            <li>업로드된 사진은 견적 산출 목적 외에는 사용하지 않아요.</li>
+          </ul>
+        </div>
 
         <div className="d-flex justify-content-center">
           <button type="button" className="btn btn-primary" onClick={handleNext}>

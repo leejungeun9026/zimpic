@@ -1,67 +1,96 @@
-export default function PriceBreakdown({ breakdown, totalPrice, useLadder }) {
-  const basePrice = breakdown?.basePrice ?? 0;
-  const ladderPrice = breakdown?.ladderPrice ?? 0;
-  const specialPrice = breakdown?.specialPrice ?? 0;
+export default function PriceBreakdown({ sections, totalPrice }) {
+  const formatWon = (n) => `${Number(n ?? 0).toLocaleString()}원`;
 
-  // ✅ 현재 store 계산에는 assemblyPrice가 없어서 0 처리(기존 UI 유지)
-  const assemblyPrice = breakdown?.assemblyPrice ?? 0;
+  const safeSections = Array.isArray(sections) ? sections : [];
+
+  // 서버 섹션을 우리가 원하는 순서로 보여주기
+  const ORDER = ["BASE", "LADDER", "STAIRS", "DISTANCE", "SPECIAL", "ASSEMBLY"];
+
+  const sortedSections = [...safeSections].sort((a, b) => {
+    const ai = ORDER.indexOf(a?.key);
+    const bi = ORDER.indexOf(b?.key);
+    const ax = ai === -1 ? 999 : ai;
+    const bx = bi === -1 ? 999 : bi;
+    return ax - bx;
+  });
+
+  const renderSection = (s) => {
+    const key = s?.key ?? "";
+    const title = s?.title ?? key;
+    const amount = Number(s?.amount ?? 0);
+    const desc = s?.description;
+    const lines = Array.isArray(s?.lines) ? s.lines : [];
+
+    // 0원 섹션은 숨김
+    if (amount === 0) return null;
+
+    // 사다리차 문구: 서버 amount 기준
+    const subtitle = key === "LADDER" ? null : desc;
+
+    return (
+      <div key={key}>
+        <div className="d-flex justify-content-between mb-2">
+          <div>
+            <div className="fw-bold">{title}</div>
+            {subtitle ? <div className="text-muted small">{subtitle}</div> : null}
+          </div>
+
+          <div className="fw-bold">
+            {key === "BASE" ? formatWon(amount) : `+${formatWon(amount)}`}
+          </div>
+        </div>
+
+        {/* 라인 아이템(분해/조립 포함)이 있으면 상세 표시 */}
+        {lines.length > 0 && (
+          <div className="mt-2 mb-2">
+            {lines.map((l, idx) => {
+              const lineAmount = Number(l?.amount ?? 0);
+              const lineDesc = l?.description ?? "";
+
+              // 0원 라인은 보통 의미 없어서 숨김
+              if (!lineDesc && lineAmount === 0) return null;
+
+              return (
+                <div
+                  key={`${key}-line-${idx}`}
+                  className="d-flex justify-content-between text-muted small"
+                  style={{ gap: 12 }}
+                >
+                  <div style={{ minWidth: 0 }}>• {lineDesc || "세부 항목"}</div>
+                  <div style={{ whiteSpace: "nowrap" }}>
+                    {lineAmount ? formatWon(lineAmount) : ""}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <hr />
+      </div>
+    );
+  };
+
+  // 서버 sections만 사용. 없으면 안내만.
+  if (!sortedSections.length) {
+    return (
+      <div className="card mb-4">
+        <div className="card-header bg-white fw-bold">견적 세부 내역</div>
+        <div className="card-body text-muted">세부 내역이 없습니다.</div>
+      </div>
+    );
+  }
 
   return (
     <div className="card mb-4">
       <div className="card-header bg-white fw-bold">견적 세부 내역</div>
       <div className="card-body">
-        <div className="d-flex justify-content-between mb-2">
-          <div>
-            <div className="fw-bold">기본 이사 비용</div>
-            <div className="text-muted small">기본 운반/작업 비용</div>
-          </div>
-          <div className="fw-bold">{Number(basePrice).toLocaleString()}원</div>
-        </div>
-
-        <hr />
-
-        <div className="d-flex justify-content-between mb-2">
-          <div>
-            <div className="fw-bold">사다리차 비용</div>
-            <div className="text-muted small">
-              {useLadder ? "사다리차 사용" : "미사용"}
-            </div>
-          </div>
-          <div className="fw-bold text-muted">
-            +{Number(ladderPrice).toLocaleString()}원
-          </div>
-        </div>
-
-        <hr />
-
-        <div className="d-flex justify-content-between mb-2">
-          <div>
-            <div className="fw-bold">특수 이삿짐 비용</div>
-            <div className="text-muted small">에어컨/피아노 등</div>
-          </div>
-          <div className="fw-bold text-muted">
-            +{Number(specialPrice).toLocaleString()}원
-          </div>
-        </div>
-
-        <hr />
-
-        <div className="d-flex justify-content-between mb-2">
-          <div>
-            <div className="fw-bold">분해/조립 비용</div>
-            <div className="text-muted small">조립/해체 필요한 물품</div>
-          </div>
-          <div className="fw-bold text-muted">
-            +{Number(assemblyPrice).toLocaleString()}원
-          </div>
-        </div>
-
-        <hr />
+        {sortedSections.map(renderSection).filter(Boolean)}
 
         <div className="d-flex justify-content-between align-items-center mt-3">
           <div className="fw-bold">총 예상 비용</div>
           <div className="fw-bold" style={{ fontSize: 20 }}>
-            {Number(totalPrice || 0).toLocaleString()}원
+            {formatWon(totalPrice || 0)}
           </div>
         </div>
       </div>

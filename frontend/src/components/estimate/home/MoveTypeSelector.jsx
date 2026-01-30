@@ -1,3 +1,5 @@
+// 이사 유형(normal / packing) 중 하나를 선택하게 하는 UI
+
 export default function MoveTypeSelector({ value, onChange }) {
   return (
     <>
@@ -16,7 +18,7 @@ export default function MoveTypeSelector({ value, onChange }) {
           >
             <div className="fw-bold">일반 이사</div>
             <div className="text-muted small">
-              고객이 직접 짐을 포장하고, 이사업체는 운반만 담당합니다.
+              직접 짐을 포장하고, 이사업체는 운반만 담당합니다.
             </div>
           </button>
         </div>

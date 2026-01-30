@@ -18,12 +18,16 @@ const initialState = {
   ],
 
   analysisByRoom: {},
-  visionImageIdByRoom: {}, // ✅ 추가
+  visionImageIdByRoom: {},
   loading: false,
+
+  // 결과 저장용, 수동 추가 시 기준 데이터
+  furniturePolicyList: [],
+  furniturePolicyById: {},
 
   moveInfo: {
     fromAddress: "",
-    toAddress: "",
+    toAddress: null,
     fromFloor: 1,
     toFloor: 1,
     fromElevator: false,
@@ -35,12 +39,44 @@ const initialState = {
 
   result: null,
 };
-
+// 수동 추가 아이템 전용
 const createId = () => Date.now() + Math.floor(Math.random() * 1000);
 
-/* ---------------- store ---------------- */
+// 에어컨, 실외기 판별
+const isAirconEn = (nameEn) =>
+  nameEn === "air_conditioner_wall" || nameEn === "air_conditioner_stand";
+const isOutdoorEn = (nameEn) =>
+  nameEn === "ac_outdoor_wall" || nameEn === "ac_outdoor_stand";
+
+// 에어컨 추가 했을 때 어떤 실외기를 붙일지
+const outdoorEnFromAirconEn = (airconNameEn) => {
+  if (airconNameEn === "air_conditioner_wall") return "ac_outdoor_wall";
+  if (airconNameEn === "air_conditioner_stand") return "ac_outdoor_stand";
+  return null;
+};
+// policy 기준 outdoor furniture id
+const outdoorFurnitureIdFromAirconEn = (airconNameEn) => {
+  if (airconNameEn === "air_conditioner_wall") return 39; // 벽걸이 실외기
+  if (airconNameEn === "air_conditioner_stand") return 40; // 스탠드 실외기
+  return null;
+};
+
 export const useEstimateStore = create((set, get) => ({
   ...initialState,
+
+  /* policy 세팅 */
+  setFurniturePolicyList: (list) =>
+    set(() => {
+      const safe = Array.isArray(list) ? list : [];
+      const byId = {};
+      safe.forEach((f) => {
+        if (f?.id != null) byId[f.id] = f;
+      });
+      return {
+        furniturePolicyList: safe,
+        furniturePolicyById: byId,
+      };
+    }),
 
   /* ---------- basicInfo ---------- */
   setBasicInfo: (data) =>
@@ -63,12 +99,10 @@ export const useEstimateStore = create((set, get) => ({
 
   updateRoomType: (roomId, type) =>
     set((state) => ({
-      rooms: state.rooms.map((r) =>
-        r.id === roomId ? { ...r, type } : r
-      ),
+      rooms: state.rooms.map((r) => (r.id === roomId ? { ...r, type } : r)),
     })),
 
-  // ✅ 방당 이미지 1장 고정: 기존 배열을 새 배열로 덮어씀
+  // 방당 이미지 1장 고정
   addRoomImages: (roomId, files) =>
     set((state) => ({
       rooms: state.rooms.map((r) => {
@@ -81,9 +115,7 @@ export const useEstimateStore = create((set, get) => ({
 
   removeRoomImage: (roomId) =>
     set((state) => ({
-      rooms: state.rooms.map((r) =>
-        r.id === roomId ? { ...r, images: [] } : r
-      ),
+      rooms: state.rooms.map((r) => (r.id === roomId ? { ...r, images: [] } : r)),
     })),
 
   /* ---------- AI 분석 (서버 연동) ---------- */
@@ -106,23 +138,47 @@ export const useEstimateStore = create((set, get) => ({
 
         visionImageIdByRoom[room.id] = result.vision_image_id;
 
-        analysisByRoom[room.id] = (result.detections || []).map((d) => ({
-          id: d.detection_id,
-          furnitureId: d.furniture_id,
-          name: d.name_kr,
+        // 에어컨 실외기 순서로 준다는 전제로 에어컨 나오면 id 기억하고 실외기 나오면 parentId로 연결
+        let lastWallAirconId = null;
+        let lastStandAirconId = null;
 
-          checked: true,
-          count: 1,
+        analysisByRoom[room.id] = (result.detections || []).map((d) => {
+          const nameEn = d?.name_en ?? d?.yolo_class ?? null; // 서버가 yolo_class에 넣을 수도 있어서 방어
+          const outdoor = isOutdoorEn(nameEn);
+          const aircon = isAirconEn(nameEn);
 
-          width: d.guide_size_cm?.width_cm ?? 300,
-          depth: d.guide_size_cm?.depth_cm ?? 100,
-          height: d.guide_size_cm?.height_cm ?? 200,
+          let parentId = null;
+          if (aircon) {
+            if (nameEn === "air_conditioner_wall") lastWallAirconId = d.detection_id;
+            if (nameEn === "air_conditioner_stand") lastStandAirconId = d.detection_id;
+          }
 
-          needsDisassembly: !!d.needs_disassembly,
-          bbox: d.bbox,
-          confidence: d.confidence,
-          category: d.category,
-        }));
+          if (outdoor) {
+            if (nameEn === "ac_outdoor_wall") parentId = lastWallAirconId;
+            if (nameEn === "ac_outdoor_stand") parentId = lastStandAirconId;
+          }
+
+          return {
+            id: d.detection_id,
+            furnitureId: d.furniture_id,
+            name: d.name_kr,
+
+            checked: true,
+            count: 1,
+
+            width: d.guide_size_cm?.width_cm ?? 300,
+            depth: d.guide_size_cm?.depth_cm ?? 100,
+            height: d.guide_size_cm?.height_cm ?? 200,
+
+            needsDisassembly: !!d.needs_disassembly,
+            bbox: d.bbox,
+            confidence: d.confidence,
+            category: d.category,
+            nameEn,
+            autoAdded: outdoor, // 서버가 자동으로 붙여준 실외기 표시
+            parentId, // 실외기면 에어컨 id로 연결
+          };
+        });
       });
 
       set({
@@ -139,15 +195,70 @@ export const useEstimateStore = create((set, get) => ({
 
   getItemsByRoom: (roomId) => get().analysisByRoom?.[roomId] ?? [],
 
+  /* ---------- 체크 토글 (부모/자식 동기화 포함) ---------- */
   toggleItem: (roomId, itemId) =>
-    set((state) => ({
-      analysisByRoom: {
-        ...state.analysisByRoom,
-        [roomId]: (state.analysisByRoom?.[roomId] ?? []).map((item) =>
-          item.id === itemId ? { ...item, checked: !item.checked } : item
-        ),
-      },
-    })),
+    set((state) => {
+      const list = state.analysisByRoom?.[roomId] ?? [];
+      const target = list.find((it) => it.id === itemId);
+      if (!target) return state;
+
+      const nextChecked = !target.checked;
+
+      const targetIsParentAircon = isAirconEn(target?.nameEn);
+      const targetIsOutdoor = isOutdoorEn(target?.nameEn);
+
+      // 부모 에어컨이면: 자식(실외기=parentId가 부모id인 애들) 같이 토글
+      if (targetIsParentAircon) {
+        const parentId = target.id;
+
+        const nextList = list.map((it) => {
+          if (it.id === parentId) return { ...it, checked: nextChecked };
+          if (it.parentId === parentId) return { ...it, checked: nextChecked };
+          return it;
+        });
+
+        return {
+          analysisByRoom: {
+            ...state.analysisByRoom,
+            [roomId]: nextList,
+          },
+        };
+      }
+
+      // 자식 토글하면 부모도 같이 맞춰주기
+      if (targetIsOutdoor && target.parentId) {
+        const parentId = target.parentId;
+
+        const nextList = list.map((it) => {
+          if (it.id === itemId) return { ...it, checked: nextChecked };
+          // 자식 ON이면 부모도 ON, 자식 OFF여도 부모는 유지
+          if (nextChecked === true && it.id === parentId) {
+            return { ...it, checked: true };
+          }
+          return it;
+        });
+
+        return {
+          analysisByRoom: {
+            ...state.analysisByRoom,
+            [roomId]: nextList,
+          },
+        };
+      }
+
+      // 그 외 일반 아이템 토글
+      const nextList = list.map((it) =>
+        it.id === itemId ? { ...it, checked: nextChecked } : it
+      );
+
+      return {
+        analysisByRoom: {
+          ...state.analysisByRoom,
+          [roomId]: nextList,
+        },
+      };
+    }),
+
 
   updateDetectedItem: (roomId, itemId, data) =>
     set((state) => ({
@@ -159,30 +270,99 @@ export const useEstimateStore = create((set, get) => ({
       },
     })),
 
-  addManualItem: (roomId, name) =>
+  /* ---------- 수동 추가 (에어컨이면 실외기 자동 생성까지) ---------- */
+  addManualItem: (roomId, furniture) =>
     set((state) => {
       const list = state.analysisByRoom?.[roomId] ?? [];
-      const newItem = {
-        id: createId(),
-        furnitureId: null, // ✅ 서버 furniture_id 없으면 견적 요청에서 제외/처리 필요
-        name,
+      const byId = state.furniturePolicyById ?? {};
+
+      const airconNameEn = furniture?.name_en ?? null;
+      const isAircon = isAirconEn(airconNameEn);
+
+      // 부모(에어컨/일반) 생성
+      const parentId = createId();
+      const parentItem = {
+        id: parentId,
+        furnitureId: furniture.id,
+        name: furniture.name_kr,
+        nameEn: furniture.name_en ?? null,
+
         checked: true,
         count: 1,
-        width: 300,
-        depth: 100,
-        height: 200,
+
+        width: furniture.width_cm,
+        depth: furniture.depth_cm,
+        height: furniture.height_cm,
+
         needsDisassembly: false,
         manual: true,
       };
+
+      // 에어컨이면 실외기(자식)도 자동 생성
+      const next = [...list, parentItem];
+
+      if (isAircon) {
+        const outdoorId = outdoorFurnitureIdFromAirconEn(airconNameEn);
+        const outdoorEn = outdoorEnFromAirconEn(airconNameEn);
+
+        const outdoorFurniture = outdoorId ? byId[outdoorId] : null;
+
+        if (outdoorFurniture && outdoorEn) {
+          next.push({
+            id: createId(),
+            furnitureId: outdoorFurniture.id,
+            name: outdoorFurniture.name_kr,
+            nameEn: outdoorEn,
+
+            checked: true,
+            count: 1,
+
+            width: outdoorFurniture.width_cm,
+            depth: outdoorFurniture.depth_cm,
+            height: outdoorFurniture.height_cm,
+
+            needsDisassembly: false,
+
+            manual: true,
+            autoAdded: true, // 수동추가의 "부속품"이라는 뜻
+            parentId, // 부모 에어컨에 연결
+          });
+        }
+      }
+
       return {
         analysisByRoom: {
           ...state.analysisByRoom,
-          [roomId]: [...list, newItem],
+          [roomId]: next,
         },
       };
     }),
 
-  /* ---------- AddressPage ---------- */
+  /* ---------- 수동 삭제 (부모 삭제 시 자식도 같이 삭제) ---------- */
+  removeManualItem: (roomId, itemId) =>
+    set((state) => {
+      const list = state.analysisByRoom?.[roomId] ?? [];
+      const target = list.find((item) => item.id === itemId);
+      if (!target?.manual) return state; // AI 아이템이면 삭제 안 함
+
+      const targetIsAircon = isAirconEn(target.nameEn);
+
+      // 에어컨(부모) 삭제면 자식(실외기)도 같이 제거
+      const next = list.filter((it) => {
+        if (it.id === itemId) return false;
+        if (targetIsAircon && it.parentId === itemId) return false;
+        return true;
+      });
+
+      return {
+        analysisByRoom: {
+          ...state.analysisByRoom,
+          [roomId]: next,
+        },
+      };
+    }),
+
+/* ---------- AddressPage ---------- */
   setMoveInfo: (data) =>
     set((state) => ({
       moveInfo: { ...state.moveInfo, ...data },
@@ -190,53 +370,67 @@ export const useEstimateStore = create((set, get) => ({
 
   /* ---------- 견적 요청 (서버 연동) ---------- */
   calculateResult: async () => {
-    const {
-      basicInfo,
-      moveInfo,
-      rooms,
-      analysisByRoom,
-      visionImageIdByRoom,
-    } = get();
+    set({ loading: true });
 
-    const payload = {
-      move_type: basicInfo.moveType === "packing" ? "PACKING" : "NORMAL",
-      area: basicInfo.size,
+    try {
+      const { basicInfo, moveInfo, rooms, analysisByRoom, visionImageIdByRoom } = get();
 
-      origin_address: moveInfo.fromAddress,
-      origin_floor: moveInfo.fromFloor,
-      origin_has_elevator: !!moveInfo.fromElevator,
-      origin_use_ladder: !!moveInfo.fromLadder,
+      const payload = {
+        move_type: basicInfo.moveType === "packing" ? "PACKING" : "GENERAL",
+        area: basicInfo.size,
 
-      dest_address: moveInfo.toUnknown ? "" : moveInfo.toAddress,
-      dest_floor: moveInfo.toUnknown ? 0 : moveInfo.toFloor,
-      dest_has_elevator: moveInfo.toUnknown ? false : !!moveInfo.toElevator,
-      dest_use_ladder: moveInfo.toUnknown ? false : !!moveInfo.toLadder,
+        origin_address: moveInfo.fromAddress,
+        origin_floor: moveInfo.fromFloor,
+        origin_has_elevator: !!moveInfo.fromElevator,
+        origin_use_ladder: !!moveInfo.fromLadder,
 
-      rooms: rooms
-        .map((room, index) => {
-          const visionId = visionImageIdByRoom?.[room.id];
-          if (!visionId) return null;
+        dest_unknown: !!moveInfo.toUnknown,
 
-          const items = (analysisByRoom?.[room.id] ?? [])
-            .filter((i) => i.checked)
-            .filter((i) => i.furnitureId != null) // 수동추가(미매핑)는 일단 제외
-            .map((i) => ({
-              furniture_id: i.furnitureId,
-              size_cm: { w_cm: i.width, d_cm: i.depth, h_cm: i.height },
-              needs_disassembly: !!i.needsDisassembly,
-            }));
+        rooms: rooms
+          .map((room, index) => {
+            const visionId = visionImageIdByRoom?.[room.id];
+            if (!visionId) return null;
 
-          return {
-            vision_image_id: visionId,
-            sort_order: index,
-            items,
-          };
-        })
-        .filter(Boolean),
-    };
+            const items = (analysisByRoom?.[room.id] ?? [])
+              .filter((i) => i.checked)
+              .filter((i) => i.furnitureId != null)
+              .map((i) => ({
+                furniture_id: i.furnitureId,
+                size_cm: { w_cm: i.width, d_cm: i.depth, h_cm: i.height },
+                needs_disassembly: !!i.needsDisassembly,
+              }));
 
-    const data = await requestEstimate(payload);
-    set({ result: data });
+            return {
+              vision_image_id: visionId,
+              sort_order: index + 1,
+              items,
+            };
+          })
+          .filter(Boolean),
+      };
+
+      if (moveInfo.toUnknown) {
+        payload.dest_address = null;
+        payload.dest_floor = null;
+        payload.dest_has_elevator = null;
+        payload.dest_use_ladder = null;
+      } else {
+        const addr = (moveInfo.toAddress ?? "").trim();
+        payload.dest_address = addr;
+        payload.dest_floor = moveInfo.toFloor;
+        payload.dest_has_elevator = !!moveInfo.toElevator;
+        payload.dest_use_ladder = !!moveInfo.toLadder;
+      }
+
+      const data = await requestEstimate(payload);
+      set({ result: data, loading: false });
+      return data;
+    } catch (e) {
+      console.error("estimate error", e);
+      console.error("estimate error response data:", e?.response?.data);
+      set({ loading: false });
+      throw e;
+    }
   },
 
   reset: () => set(initialState),
