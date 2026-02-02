@@ -104,11 +104,29 @@ export default function ResultPage() {
     return summary?.dest_address ? "사용" : "사용 (도착지 미정)";
   }, [pricingSections, summary?.dest_address]);
 
+
+  const TRUCK_TYPE_LABEL = {
+    "1T": "1톤",
+    "2_5T": "2.5톤",
+    "5T": "5톤",
+    "6T": "6톤",
+    "7_5T": "7.5톤",
+    "10T": "10톤",
+  };
+
   const vehicleText = useMemo(() => {
     const plan = summary?.truck_plan ?? [];
     if (!plan.length) return "트럭 정보 없음";
-    return plan.map((t) => `${t.truck_type}×${t.truck_count}`).join(" + ");
+
+    return plan
+      .map((t) => {
+        const label = TRUCK_TYPE_LABEL[t.truck_type] ?? t.truck_type;
+        return `${label} ${t.truck_count}대`;
+      })
+      .join(" + ");
   }, [summary]);
+
+
 
   const roomSummaries = useMemo(() => {
     const boxesCount = Number(summary?.boxes_count ?? 0);
@@ -260,65 +278,64 @@ export default function ResultPage() {
   };
 
   return (
-    <div className="container my-4">
-      <div className="card shadow-sm p-4">
-        <StepIndicator currentStep={4} />
+    <div className="container-fluid py-4">
 
-        <div ref={pdfRef}>
-          <div className="mb-4">
-            <h3 className="fw-bold mb-2">이사 비용 계산 결과</h3>
-            <p className="text-muted mb-3">
-              입력하신 정보를 바탕으로 예상 이사 비용을 계산했습니다. 실제 비용은
-              업체 견적에 따라 달라질 수 있습니다.
-            </p>
+      <StepIndicator currentStep={4} />
 
-            <div className="card mb-4">
-              <div className="card-header bg-white fw-bold">트럭 적재 시뮬레이션(3D)</div>
-              <div className="card-body">
-                <TruckLoad3D result={result} />
-                <div className="text-muted small mt-2">
-                  참고: 실제 적재는 현장 조건에 따라 달라질 수 있어요.
-                </div>
-              </div>
-            </div>
+      <div ref={pdfRef}>
 
-            <ResultSummaryBox totalPrice={totalPrice} />
+        <article className="title mb-4">
+          <h2 className="fw-bold mb-2">이사 비용 계산 결과</h2>
+          <p className="text-muted small">
+            입력하신 정보를 바탕으로 예상 이사 비용을 계산했어요. <br />실제 비용은 업체 견적에 따라 달라질 수 있어요.
+          </p>
+        </article>
 
-            <SelectedInfoTable
-              moveTypeText={moveTypeText}
-              sizeText={sizeText}
-              moveInfo={moveInfo}
-              distanceKm={distanceKm}
-              ladderText={ladderText}
-              totalSpecialCount={totalSpecialCount}
-              totalItemCount={totalItemCount}
-              specialLines={specialLines}
-              disassemblyNames={disassemblyNames}
-              boxesCount={summary?.boxes_count}
-              boxesDescription={summary?.boxes_description}
-            />
-          </div>
+        <section className="mb-4">
+          <ResultSummaryBox totalPrice={totalPrice} />
+        </section>
 
+        <section className="mb-4">
+          <SelectedInfoTable
+            moveTypeText={moveTypeText}
+            sizeText={sizeText}
+            moveInfo={moveInfo}
+            distanceKm={distanceKm}
+            ladderText={ladderText}
+            totalSpecialCount={totalSpecialCount}
+            totalItemCount={totalItemCount}
+            specialLines={specialLines}
+            disassemblyNames={disassemblyNames}
+            boxesCount={summary?.boxes_count}
+            boxesDescription={summary?.boxes_description}
+          />
+        </section>
+
+        <section className="mb-4">
           <RoomItemsSummary
             roomSummaries={roomSummaries}
             thumbUrls={thumbUrls}
             vehicleText={vehicleText}
             specialFurnitureIdSet={specialFurnitureIdSet}
+            boxesDescription={summary?.boxes_description}
           />
+        </section>
 
+        <section className="mb-4">
           {/* 서버 sections만으로 렌더 */}
           <PriceBreakdown sections={pricingSections} totalPrice={totalPrice} />
-        </div>
+        </section>
 
-        <ResultFooterActions
-          onPrev={handlePrev}
-          onSave={handleSavePdf}
-          onResetToHome={() => {
-            reset();
-            navigate("/HomePage");
-          }}
-        />
       </div>
+
+      <ResultFooterActions
+        onPrev={handlePrev}
+        onSave={handleSavePdf}
+        onResetToHome={() => {
+          reset();
+          navigate("/HomePage");
+        }}
+      />
     </div>
   );
 }
