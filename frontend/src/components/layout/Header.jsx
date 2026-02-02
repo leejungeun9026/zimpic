@@ -1,7 +1,18 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useEstimateStore } from "../../store/estimateStore";
 
 
 function Header() {
+
+  const navigate = useNavigate();
+  const reset = useEstimateStore((s) => s.reset);
+
+  const handleLogoClick = (e) => {
+    e.preventDefault(); // NavLink 기본 이동 막고
+    reset();            // 견적 상태 초기화
+    navigate("/");      // 홈으로 이동
+  };
+
   return (
     <nav className="navbar bg-white border-bottom sticky-top py-3">
       <div className="inner">
@@ -10,6 +21,7 @@ function Header() {
           <NavLink
             to="/"
             className="navbar-brand d-flex align-items-center m-0 p-0"
+            onClick={handleLogoClick}
           >
             <div
               style={{
