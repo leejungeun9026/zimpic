@@ -1,6 +1,3 @@
-import step01 from "../../../public/step01.jpg";
-import step02 from "../../../public/step02.jpg";
-import step03 from "../../../public/step03.jpg";
 
 
 const Steps = () => {
@@ -16,7 +13,7 @@ const Steps = () => {
           <div className="row row-cols-1 row-cols-md-3 gy-5 gx-3">
             <div className="col">
               <div className="card rounded-4 h-100 border-0 overflow-hidden shadow-sm">
-                <img src={step01} alt="이용방법1" style={{ width: "100%", height: "auto" }} />
+                <img src="/step01.jpg" alt="이용방법1" style={{ width: "100%", height: "auto" }} />
                 <div className="card-body p-md-4">
                   <div className="d-flex align-items-center gap-1 pb-2">
                     <div className="icon-box-24 rounded-pill bg-primary text-white small">1</div>
@@ -30,7 +27,7 @@ const Steps = () => {
             </div>
             <div className="col">
               <div className="card rounded-4 h-100 border-0 overflow-hidden shadow-sm">
-                <img src={step02} alt="이용방법2" style={{ width: "100%", height: "auto" }} />
+                <img src="/step02.jpg" alt="이용방법2" style={{ width: "100%", height: "auto" }} />
                 <div className="card-body p-md-4">
                   <div className="d-flex align-items-center gap-1 pb-2">
                     <div className="icon-box-24 rounded-pill bg-primary text-white small">2</div>
@@ -44,7 +41,7 @@ const Steps = () => {
             </div>
             <div className="col">
               <div className="card rounded-4 h-100 border-0 overflow-hidden shadow-sm">
-                <img src={step03} alt="이용방법3" style={{ width: "100%", height: "auto" }} />
+                <img src="/step03.jpg" alt="이용방법3" style={{ width: "100%", height: "auto" }} />
                 <div className="card-body p-md-4">
                   <div className="d-flex align-items-center gap-1 pb-2">
                     <div className="icon-box-24 rounded-pill bg-primary text-white small">3</div>

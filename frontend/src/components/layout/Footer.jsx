@@ -1,5 +1,3 @@
-import footerLogo from "../../../public/logo_en_w.svg";
-
 function Footer() {
   return (
     <footer className="bg-dark text-white py-5">
@@ -8,7 +6,7 @@ function Footer() {
           <div className="row gx-5 gy-3">
             <div className="col-12 col-md-auto">
               <div className="logo opacity-75">
-                <img src={footerLogo} alt="짐픽"
+                <img src="/logo_en_w.svg" alt="짐픽"
                   style={{
                     height: "28px",
                     width: "auto",

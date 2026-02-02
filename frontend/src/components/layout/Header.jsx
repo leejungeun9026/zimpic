@@ -1,8 +1,7 @@
 import { NavLink } from "react-router-dom";
-import headerLogo from "../../../public/logo_kr.svg";
+
 
 function Header() {
-
   return (
     <nav className="navbar bg-white border-bottom sticky-top py-3">
       <div className="inner">
@@ -20,7 +19,7 @@ function Header() {
               }}
             >
               <img
-                src={headerLogo}
+                src="/logo_kr.svg"
                 alt="ZIMPIC"
                 style={{
                   height: "34px",
