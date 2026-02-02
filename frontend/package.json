@@ -13,7 +13,10 @@
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/react-fontawesome": "^3.1.1",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
     "axios": "^1.13.2",
+    "bin-packing-3d": "^1.0.0",
     "bootstrap": "^5.3.8",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.0.0",
@@ -22,6 +25,7 @@
     "react-bootstrap": "^2.10.10",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.12.0",
+    "three": "^0.182.0",
     "zustand": "^5.0.10"
   },
   "devDependencies": {

@@ -19,7 +19,12 @@ const initialState = {
 
   analysisByRoom: {},
   visionImageIdByRoom: {},
+
   loading: false,
+
+  // ✅ 추가: AI 분석 완료 여부(및 상태) - 무한 재호출 방지용
+  // "idle" | "loading" | "done" | "error"
+  visionStatus: "idle",
 
   // 결과 저장용, 수동 추가 시 기준 데이터
   furniturePolicyList: [],
@@ -39,6 +44,7 @@ const initialState = {
 
   result: null,
 };
+
 // 수동 추가 아이템 전용
 const createId = () => Date.now() + Math.floor(Math.random() * 1000);
 
@@ -54,6 +60,7 @@ const outdoorEnFromAirconEn = (airconNameEn) => {
   if (airconNameEn === "air_conditioner_stand") return "ac_outdoor_stand";
   return null;
 };
+
 // policy 기준 outdoor furniture id
 const outdoorFurnitureIdFromAirconEn = (airconNameEn) => {
   if (airconNameEn === "air_conditioner_wall") return 39; // 벽걸이 실외기
@@ -109,22 +116,38 @@ export const useEstimateStore = create((set, get) => ({
         if (r.id !== roomId) return r;
         const first = files?.[0];
         if (!first) return r;
+
+        // ✅ 새 이미지가 들어오면 기존 분석 결과는 무효가 될 수 있으니 초기화
         return { ...r, images: [{ id: createId(), file: first }] };
       }),
+      // ✅ 이미지 바뀌면 분석 다시 해야 하므로 상태 초기화
+      analysisByRoom: {},
+      visionImageIdByRoom: {},
+      visionStatus: "idle",
     })),
 
   removeRoomImage: (roomId) =>
     set((state) => ({
       rooms: state.rooms.map((r) => (r.id === roomId ? { ...r, images: [] } : r)),
+      // ✅ 이미지 제거되면 분석 결과도 무효 처리
+      analysisByRoom: {},
+      visionImageIdByRoom: {},
+      visionStatus: "idle",
     })),
 
   /* ---------- AI 분석 (서버 연동) ---------- */
   analyzeImages: async () => {
-    const { rooms } = get();
+    const { rooms, visionStatus } = get();
     const roomsWithImage = rooms.filter((r) => r.images?.[0]?.file);
     if (roomsWithImage.length === 0) return;
 
-    set({ loading: true });
+    // ✅ 이미 분석 중이면 중복 호출 방지
+    if (visionStatus === "loading") return;
+
+    const MIN_LOADING_MS = 800;
+    const start = Date.now();
+
+    set({ loading: true, visionStatus: "loading" });
 
     try {
       const data = await analyzeVision(roomsWithImage);
@@ -132,7 +155,7 @@ export const useEstimateStore = create((set, get) => ({
       const analysisByRoom = {};
       const visionImageIdByRoom = {};
 
-      data.results.forEach((result, index) => {
+      (data?.results ?? []).forEach((result, index) => {
         const room = roomsWithImage[index];
         if (!room) return;
 
@@ -143,7 +166,7 @@ export const useEstimateStore = create((set, get) => ({
         let lastStandAirconId = null;
 
         analysisByRoom[room.id] = (result.detections || []).map((d) => {
-          const nameEn = d?.name_en ?? d?.yolo_class ?? null; // 서버가 yolo_class에 넣을 수도 있어서 방어
+          const nameEn = d?.name_en ?? d?.yolo_class ?? null;
           const outdoor = isOutdoorEn(nameEn);
           const aircon = isAirconEn(nameEn);
 
@@ -181,15 +204,23 @@ export const useEstimateStore = create((set, get) => ({
         });
       });
 
+      // ✅ 빈 결과(0 detections)여도 'done'으로 처리해야 무한 재호출 안 됨
       set({
         analysisByRoom,
         visionImageIdByRoom,
-        loading: false,
+        visionStatus: "done",
       });
     } catch (e) {
       console.error("vision error", e);
-      set({ loading: false });
       alert("이미지 분석에 실패했습니다.");
+
+      // ✅ 실패도 error로 마킹해서 페이지가 무한 재호출 안 하게
+      set({ visionStatus: "error" });
+    } finally {
+      const elapsed = Date.now() - start;
+      const wait = Math.max(0, MIN_LOADING_MS - elapsed);
+      if (wait) await new Promise((r) => setTimeout(r, wait));
+      set({ loading: false });
     }
   },
 
@@ -258,7 +289,6 @@ export const useEstimateStore = create((set, get) => ({
         },
       };
     }),
-
 
   updateDetectedItem: (roomId, itemId, data) =>
     set((state) => ({

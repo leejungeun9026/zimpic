@@ -21,7 +21,7 @@ export async function analyzeVision(rooms) {
 
   formData.append("rooms", JSON.stringify(roomsPayload));
 
-  // ✅ Vite proxy를 전제로 상대경로 호출
+  // Vite proxy를 전제로 상대경로 호출
   const response = await axios.post("/api/vision/", formData);
 
   return response.data;

@@ -10,6 +10,9 @@ import RoomItemsSummary from "../components/estimate/result/RoomItemsSummary";
 import PriceBreakdown from "../components/estimate/result/PriceBreakdown";
 import ResultFooterActions from "../components/estimate/result/ResultFooterActions";
 
+// 3D 카드
+import TruckLoad3D from "../components/estimate/result/TruckLoad3D";
+
 // pdf 로직
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -108,6 +111,9 @@ export default function ResultPage() {
   }, [summary]);
 
   const roomSummaries = useMemo(() => {
+    const boxesCount = Number(summary?.boxes_count ?? 0);
+    const boxSpec = summary?.box;
+
     return rooms.map((room) => {
       const items = (analysisByRoom?.[room.id] ?? []).filter((i) => i.checked);
 
@@ -137,6 +143,29 @@ export default function ResultPage() {
         }
         grouped[key].count += i.count ?? 1;
       });
+
+      // ✅ 박스는 한 번만(첫 방에) 추가
+      if (room.sortOrder === 0 || room.id === rooms[0]?.id) {
+        if (boxesCount > 0 && boxSpec) {
+          const bw = Number(boxSpec.packed_w_cm ?? boxSpec.w_cm ?? 0);
+          const bd = Number(boxSpec.packed_d_cm ?? boxSpec.d_cm ?? 0);
+          const bh = Number(boxSpec.packed_h_cm ?? boxSpec.h_cm ?? 0);
+
+          const boxKey = `이사 박스(5호)|${bw}x${bh}x${bd}|dis:0|fid:${boxSpec.furniture_id}`;
+
+          grouped[boxKey] = {
+            key: boxKey,
+            name: boxSpec.name_kr ?? "이사 박스",
+            count: boxesCount,
+            width: bw,
+            height: bh,
+            depth: bd,
+            needsDisassembly: false,
+            furnitureId: boxSpec.furniture_id,
+            isBox: true,
+          };
+        }
+      }
 
       // 전체 짐 개수
       const totalCount = Object.values(grouped).reduce(
@@ -242,6 +271,16 @@ export default function ResultPage() {
               입력하신 정보를 바탕으로 예상 이사 비용을 계산했습니다. 실제 비용은
               업체 견적에 따라 달라질 수 있습니다.
             </p>
+
+            <div className="card mb-4">
+              <div className="card-header bg-white fw-bold">트럭 적재 시뮬레이션(3D)</div>
+              <div className="card-body">
+                <TruckLoad3D result={result} />
+                <div className="text-muted small mt-2">
+                  참고: 실제 적재는 현장 조건에 따라 달라질 수 있어요.
+                </div>
+              </div>
+            </div>
 
             <ResultSummaryBox totalPrice={totalPrice} />
 
