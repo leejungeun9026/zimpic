@@ -124,15 +124,18 @@ export default function HomePage() {
       alert("공간을 1개 이상 추가해주세요.");
       return;
     }
+    const noImageRooms = (rooms ?? []).filter((r) => (r.images?.length ?? 0) === 0);
 
-    const hasAnyImage = (rooms ?? []).some((r) => (r.images?.length ?? 0) > 0);
-    if (!hasAnyImage) {
-      alert("이미지를 최소 1장 이상 업로드해주세요.");
-      return;
-    }
+    if (noImageRooms.length > 0) {
+    const names = noImageRooms
+      .map((r, idx) => r.type || `공간 ${r.id ?? idx + 1}`)
+      .join(", ");
+    alert(`아직 사진이 없는 공간이 있어요: ${names}\n각 공간마다 사진을 1장씩 업로드해주세요.`);
+    return;
+  }
 
-    navigate("/AICheckPage");
-  };
+  navigate("/AICheckPage");
+};
 
   return (
     <div className="container-fluid py-4">
