@@ -5,7 +5,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 20px 0;
+  margin: 20px 0 60px;
 }
 
 .step-wrapper {
@@ -26,13 +26,19 @@
 }
 
 .step-circle.active {
-  background-color: #333;
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
   color: white;
-  border-color: #333;
+}
+
+.step-circle.completed {
+  background-color: rgba(var(--bs-secondary-rgb), 0.2);
+  border-color: transparent;
+  color: var(--bs-secondary);
 }
 
 .step-line {
-  width: 60px;
+  width: 30px;
   height: 1px;
   background-color: #bbb;
 }

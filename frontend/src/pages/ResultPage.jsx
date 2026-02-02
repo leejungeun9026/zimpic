@@ -184,7 +184,7 @@ export default function ResultPage() {
 
   if (!result) {
     return (
-      <div className="container my-4 text-center">
+      <div className="container-fluid my-4 text-center">
         <p>결과 데이터가 없습니다.</p>
         <button
           className="btn btn-outline-primary"

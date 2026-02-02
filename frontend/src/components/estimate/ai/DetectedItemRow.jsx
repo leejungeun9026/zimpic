@@ -1,4 +1,5 @@
-import InfoTooltip from "../../common/InfoTooltip";
+import { Trash } from "lucide-react";
+import InfoPopover from "../../common/InfoPopover";
 
 export default function DetectedItemRow({
   roomId,
@@ -11,27 +12,22 @@ export default function DetectedItemRow({
 }) {
   // DB 가구 정책 정보를 툴팁으로 보여줌
   const tooltipContent = furniturePolicy ? (
-    <div className="d-flex flex-column gap-1">
-      <div>{furniturePolicy.description}</div>
-
-      {furniturePolicy.reference_model && (
-        <div className="text-muted">참고: {furniturePolicy.reference_model}</div>
-      )}
-
-      {furniturePolicy.width_cm &&
-        furniturePolicy.depth_cm &&
-        furniturePolicy.height_cm && (
-          <div className="text-muted">
-            기준치: W : {furniturePolicy.width_cm} / D : {furniturePolicy.depth_cm} / H : {furniturePolicy.height_cm} (cm)
-          </div>
+    <div className="text-start">
+      <p className="mb-2">{furniturePolicy.description}</p>
+      <div className="text-muted" style={{ fontSize: "12px" }}>
+        {furniturePolicy.reference_model && (
+          <>
+            <b>사이즈 참고(cm)</b>
+            <p>{furniturePolicy.reference_model} (너비 : {furniturePolicy.width_cm} / 깊이 : {furniturePolicy.depth_cm} / 높이 : {furniturePolicy.height_cm})</p>
+          </>
         )}
-
+      </div>
       {furniturePolicy?.reference_url && (
         <a
           href={furniturePolicy.reference_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="d-flex align-items-center gap-2 mt-2 text-decoration-none"
+          className="d-flex align-items-center gap-2 mt-1 text-decoration-none"
           onClick={(e) => e.stopPropagation()}
           style={{
             border: "1px solid #e9ecef",
@@ -99,119 +95,133 @@ export default function DetectedItemRow({
 
   return (
     <div
-      className="list-group-item"
-      style={{
-        opacity: item.checked ? 1 : 0.45,
-        border: "none",
-        borderBottom: "1px solid #EEF2F7",
-        paddingTop: 14,
-        paddingBottom: 14,
-      }}
+      className={`list-group-item border-0 border-bottom px-1 py-3 ${item.checked ? "opacity-1" : "opacity-50"}`}
     >
-      <div className="d-flex flex-column flex-md-row gap-2 gap-md-3 align-items-md-center justify-content-between">
-        {/* 좌측 */}
-        <div className="d-flex align-items-center gap-2" style={{ minWidth: 180 }}>
-          <input
-            className="form-check-input mt-0"
-            type="checkbox"
-            checked={!!item.checked}
-            onChange={() => onToggle(roomId, item.id)}
-          />
-
-          <div className="fw-semibold">{item.name}</div>
-
-          {tooltipContent && <InfoTooltip content={tooltipContent} />}
-
-          <div className="text-muted small ms-1">{item.count ?? 1}개</div>
-        </div>
-
-        {/* 우측 */}
-        <div className="w-100 w-md-auto">
-          <div className="d-flex flex-wrap flex-lg-nowrap align-items-center justify-content-md-end gap-2">
-            {/* W */}
-            <div className="d-flex align-items-center" style={{ gap: 6 }}>
-              <span className="text-muted small">W:</span>
-              <input
-                type="number"
-                className="form-control form-control-sm"
-                style={{ width: 72 }}
-                disabled={!item.checked}
-                value={item.width ?? 300}
-                onChange={(e) => onSizeChange(roomId, item.id, "width", e.target.value)}
-              />
-              <span className="text-muted small">cm</span>
-            </div>
-
-            {/* H */}
-            <div className="d-flex align-items-center" style={{ gap: 6 }}>
-              <span className="text-muted small">H:</span>
-              <input
-                type="number"
-                className="form-control form-control-sm"
-                style={{ width: 72 }}
-                disabled={!item.checked}
-                value={item.height ?? 200}
-                onChange={(e) => onSizeChange(roomId, item.id, "height", e.target.value)}
-              />
-              <span className="text-muted small">cm</span>
-            </div>
-
-            {/* D */}
-            <div className="d-flex align-items-center" style={{ gap: 6 }}>
-              <span className="text-muted small">D:</span>
-              <input
-                type="number"
-                className="form-control form-control-sm"
-                style={{ width: 72 }}
-                disabled={!item.checked}
-                value={item.depth ?? 100}
-                onChange={(e) => onSizeChange(roomId, item.id, "depth", e.target.value)}
-              />
-              <span className="text-muted small">cm</span>
-            </div>
-
+      <div className="row g-1 align-items-start">
+        {/* 체크박스 & 아이템 이름 */}
+        <div className="col12 col-sm-auto">
+          <div className="d-flex align-items-center gap-1">
+            <input
+              className="form-check-input mt-0"
+              type="checkbox"
+              id={`${item.name}${item.id}`}
+              checked={!!item.checked}
+              onChange={() => onToggle(roomId, item.id)}
+              style={{ cursor: "pointer" }}
+            />
+            <label htmlFor={`${item.name}${item.id}`} className="fw-semibold">
+              {item.name}{""}
+              <span className="ms-1">
+                {item.count ? `${item.count}개` : ""}
+              </span>
+            </label>
             {item.manual && (
-              <div className="w-100 w-lg-auto d-flex justify-content-end">
-                <button
-                  type="button"
-                  className="btn btn-outline-danger btn-sm"
-                  style={{ width: 32, height: 32, lineHeight: 1, padding: 0 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRemoveManualItem?.(roomId, item.id);
-                  }}
-                  title="삭제"
-                  aria-label={`${item.name} 삭제`}
-                >
-                  ✕
-                </button>
-              </div>
+              <span className="ms-1 badge bg-primary bg-opacity-10 text-primary">
+                직접 추가
+              </span>
             )}
           </div>
         </div>
+
+        {/* DB에서 분해/조립 가능인 품목만 표시 */}
+        {disassemblyAvailable && (
+          <div className="col12 col-sm-auto ms-sm-auto">
+            <div className="form-check form-switch text-muted small" >
+              <input
+                id={disassemblyId}
+                className="form-check-input"
+                type="checkbox"
+                role="switch"
+                disabled={!item.checked}
+                checked={disassemblyChecked}
+                onChange={(e) => {
+                  const next = e.target.checked;
+                  onUpdateItem?.(roomId, item.id, { needsDisassembly: next });
+                }}
+                style={{ cursor: "pointer" }}
+              />
+              <label className="form-check-label" htmlFor={disassemblyId} style={{ cursor: "pointer" }}>
+                분해 및 조립 필요
+              </label>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* ✅ DB에서 분해/조립 가능인 품목만 표시 */}
-      {disassemblyAvailable && (
-        <div className="d-flex justify-content-end mt-2">
-          <div className="form-check text-muted small">
-            <input
-              id={disassemblyId}
-              className="form-check-input"
-              type="checkbox"
-              disabled={!item.checked}
-              checked={disassemblyChecked}
-              onChange={(e) => {
-                const next = e.target.checked;
-                onUpdateItem?.(roomId, item.id, { needsDisassembly: next });
-              }}
-            />
-            <label className="form-check-label" htmlFor={disassemblyId}>
-              분해 및 조립 필요
-            </label>
+      {/* 가구 사이즈 */}
+      <div className="row gy-2 mt-1">
+        <div className="col">
+          <div className="row flex-sm-nowrap flex-lg-nowrap align-items-center gx-2 gy-1">
+            {/* W */}
+            <div className="col-auto">
+              <div className="d-flex align-items-center flex-nowrap gap-1">
+                <span className="text-muted small text-nowrap">너비:</span>
+                <input
+                  type="text"
+                  className="form-control form-control-sm text-end"
+                  style={{ width: 50 }}
+                  disabled={!item.checked}
+                  value={item.width ?? ""}
+                  onChange={(e) => onSizeChange(roomId, item.id, "width", e.target.value)}
+                />
+                <span className="text-muted small text-nowrap">cm</span>
+              </div>
+            </div>
+
+            {/* D */}
+            <div className="col-auto">
+              <div className="d-flex align-items-center flex-nowrap gap-1">
+                <span className="text-muted small text-nowrap">깊이:</span>
+                <input
+                  type="text"
+                  className="form-control form-control-sm text-end"
+                  style={{ width: 50 }}
+                  disabled={!item.checked}
+                  value={item.depth ?? ""}
+                  onChange={(e) => onSizeChange(roomId, item.id, "depth", e.target.value)}
+                />
+                <span className="text-muted small text-nowrap">cm</span>
+              </div>
+            </div>
+
+            {/* H */}
+            <div className="col-auto">
+              <div className="d-flex align-items-center flex-nowrap gap-1">
+                <span className="text-muted small text-nowrap">높이:</span>
+                <input
+                  type="text"
+                  className="form-control form-control-sm text-end"
+                  style={{ width: 50 }}
+                  disabled={!item.checked}
+                  value={item.height ?? ""}
+                  onChange={(e) => onSizeChange(roomId, item.id, "height", e.target.value)}
+                />
+                <span className="text-muted small text-nowrap">cm</span>
+                {tooltipContent &&
+                  <InfoPopover content={tooltipContent} />
+                }
+              </div>
+            </div>
           </div>
         </div>
-      )}
+        <div className="col-sm-auto">
+          {item.manual && (
+            <button
+              type="button"
+              className="btn btn-danger btn-sm w-100 pe-3"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemoveManualItem?.(roomId, item.id);
+              }}
+              title="삭제"
+              aria-label={`${item.name} 삭제`}
+            >
+              <Trash size={16} className="mb-1 me-1" />
+              짐 삭제
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

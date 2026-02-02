@@ -1,5 +1,6 @@
-import SkeletonRows from "./SkeletonRows";
+import { CircleAlert } from "lucide-react";
 import DetectedItemRow from "./DetectedItemRow";
+import SkeletonRows from "./SkeletonRows";
 
 export default function DetectedItemList({
   loading,
@@ -14,7 +15,12 @@ export default function DetectedItemList({
 }) {
   if (loading) return <SkeletonRows count={4} />;
   if (!items || items.length === 0)
-    return <div className="text-muted p-3">인식된 짐이 없습니다.</div>;
+    return (
+      <div className="bg-secondary bg-opacity-10 rounded-2 mt-3 p-3 text-center">
+        <CircleAlert size={18} />
+        <p className="small text-muted">인식된 이삿짐이 없어요.</p>
+      </div>
+    );
 
   const getFurniturePolicy = (furnitureId) => {
     if (!furnitureById) return undefined;

@@ -28,14 +28,14 @@ const MainPage = () => {
   }, [location.hash]);
 
   return (
-    <div className="main-page">
+    <>
       <Hero />
       <Features />
       <Steps />
       <Estimate />
       <Recommend />
       <CTASection />
-    </div>
+    </>
   );
 };
 

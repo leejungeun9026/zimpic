@@ -44,6 +44,8 @@
 * {
   font-family: "Pretendard";
   letter-spacing: -0.5px;
+  border-collapse: collapse;
+  box-sizing: border-box
 }
 
 .btn-primary {

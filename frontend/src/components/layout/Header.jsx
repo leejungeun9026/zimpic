@@ -4,41 +4,43 @@ import headerLogo from "../../../public/logo_kr.svg";
 function Header() {
 
   return (
-    <nav className="navbar bg-white border-bottom sticky-top py-3" style={{ backdropFilter: "blur(8px)" }}>
-      <div className="container d-flex align-items-center">
-        {/* Logo */}
-        <NavLink
-          to="/"
-          className="navbar-brand d-flex align-items-center m-0 p-0"
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+    <nav className="navbar bg-white border-bottom sticky-top py-3">
+      <div className="inner">
+        <div className="container-fluid d-flex align-items-center">
+          {/* Logo */}
+          <NavLink
+            to="/"
+            className="navbar-brand d-flex align-items-center m-0 p-0"
           >
-            <img
-              src={headerLogo}
-              alt="ZIMPIC"
+            <div
               style={{
-                height: "34px",
-                width: "auto",
-                objectFit: "contain",
-                display: "block",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
-            />
-          </div>
-        </NavLink>
+            >
+              <img
+                src={headerLogo}
+                alt="ZIMPIC"
+                style={{
+                  height: "34px",
+                  width: "auto",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
+            </div>
+          </NavLink>
 
-        {/* Menu */}
-        <div className="d-flex align-items-center gap-4 ms-auto">
-          <NavLink to="/HomePage" className="header-navlink btn btn-link p-0 text-decoration-none text-dark small fw-semibold">
-            견적 계산해보기
-          </NavLink>
-          <NavLink to="" className="header-navlink btn btn-link p-0 text-decoration-none text-dark small fw-semibold">
-            내 주변 이사업체 찾기
-          </NavLink>
+          {/* Menu */}
+          <div className="d-flex align-items-center gap-4 ms-auto">
+            <NavLink to="/HomePage" className="header-navlink btn btn-link p-0 text-decoration-none text-dark small fw-semibold">
+              견적 계산해보기
+            </NavLink>
+            <NavLink to="" className="header-navlink btn btn-link p-0 text-decoration-none text-dark small fw-semibold">
+              내 주변 이사업체 찾기
+            </NavLink>
+          </div>
         </div>
       </div>
 

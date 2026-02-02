@@ -9,6 +9,12 @@ body {
   overflow-x: hidden;
 }
 
+.inner {
+  width: 100%;
+  max-width: 1024px;
+  margin: 0 auto;
+}
+
 /* ====== Upload Area ====== */
 .upload-area {
   border: 2px dashed #ccc;
