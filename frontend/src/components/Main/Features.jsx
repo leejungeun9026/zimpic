@@ -1,37 +1,46 @@
-import React from "react";
-import { ScanEye, Smartphone, PiggyBank } from "lucide-react";
+import { Container, HandCoins, Van, VectorSquare } from "lucide-react";
 
 const Features = () => {
   const features = [
     {
-      icon: <ScanEye size={48} />,
-      title: "AI 이미지 분석",
-      desc: "공간 사진을 찍으면 AI가 가구와 짐의 양을 자동으로 분석합니다.",
+      icon: <VectorSquare size={24} />,
+      title: "AI 가구 자동 인식",
+      desc: <>직접 하나하나 입력할 필요 없이 <br className="d-block d-sm-none d-md-block" />사진 속 가구를 자동으로 분류하고 크기를 추정</>,
     },
     {
-      icon: <Smartphone size={48} />,
-      title: "간편한 비대면",
-      desc: "약속 잡고 방문할 필요 없이, 언제 어디서나 견적을 확인하세요.",
+      icon: <Container size={24} />,
+      title: "실제 적재 기준 용적(CBM) 계산",
+      desc: <>단순 개수가 아닌 <br className="d-block d-sm-none d-md-block" />트럭 적재 기준으로 실제 부피를 계산</>,
     },
     {
-      icon: <PiggyBank size={48} />,
-      title: "합리적인 비용",
-      desc: "여러 업체의 비교 견적을 통해 최적의 가격을 제안합니다.",
+      icon: <Van size={24} />,
+      title: "최적의 트럭 톤수 자동 추천",
+      desc: <>1톤? 2.5톤? 고민할 필요 없이 <br className="d-block d-sm-none d-md-block" />적재율을 기준으로 자동 조합</>,
+    },
+    {
+      icon: <HandCoins size={24} />,
+      title: "거리·층수까지 반영한 현실적인 비용",
+      desc: <>이동 거리, 엘리베이터/사다리차 여부, <br className="d-block d-sm-none d-md-block" />특수 가구까지 반영한 견적</>,
     },
   ];
 
   return (
-    <section id="features" className="lp-features">
-      <div className="lp-container">
-        <h2 className="lp-section__title">왜 AI 견적일까요?</h2>
-        <p className="lp-section__desc">최첨단 기술로 이사의 새로운 기준을 만듭니다.</p>
+    <section id="main-features" className="main-section">
+      <div className="container">
+        <div className="title pb-4 text-center">
+          <h2 className="fs-2 fw-bold pb-2">짐픽만의 스마트 이사 견적</h2>
+          <p className="text-secondary pb-3">사진 한 장으로 가구 인식부터 예상 비용까지 자동 계산합니다.</p>
+        </div>
 
-        <div className="lp-featureGrid">
+        <div className="row row-cols-1 row-cols-sm-2 g-3 main-inner">
           {features.map((feature, index) => (
-            <div key={index} className="lp-card">
-              <div className="lp-card__icon">{feature.icon}</div>
-              <h3 className="lp-card__title">{feature.title}</h3>
-              <p className="lp-card__desc">{feature.desc}</p>
+            <div key={index} className="col">
+              <div className="card h-100 rounded-3 shadow-sm border border-opacity-10 text-center">
+                <div className="card-body py-4">
+                  <div className="icon-box-48 mx-auto bg-primary bg-opacity-10 rounded-3 text-primary mb-3">{feature.icon}</div>
+                  <p className="fw-semibold">{feature.desc}</p>
+                </div>
+              </div>
             </div>
           ))}
         </div>

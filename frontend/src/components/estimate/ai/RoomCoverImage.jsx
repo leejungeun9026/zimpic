@@ -6,7 +6,6 @@ export default function RoomCoverImage({ coverUrl, loading, detectedItems = [], 
 
   // 이미지가 실제로 차지하는 사각형이 어디인지 저장
   const [layout, setLayout] = useState({ imgLeft: 0, imgTop: 0, imgW: 0, imgH: 0 });
-  const PADDING = 16;
 
   //BBOX 좌표를 픽셀로 바꾸기 위해  위치 계산
   const recalc = () => {
@@ -17,8 +16,8 @@ export default function RoomCoverImage({ coverUrl, loading, detectedItems = [], 
     const wrapW = wrap.clientWidth;
     const wrapH = wrap.clientHeight;
 
-    const contentW = Math.max(0, wrapW - PADDING * 2);
-    const contentH = Math.max(0, wrapH - PADDING * 2);
+    const contentW = Math.max(0, wrapW);
+    const contentH = Math.max(0, wrapH);
 
     const naturalW = img.naturalWidth || 1;
     const naturalH = img.naturalHeight || 1;
@@ -35,8 +34,8 @@ export default function RoomCoverImage({ coverUrl, loading, detectedItems = [], 
       drawH = contentW / imgAspect;
     }
 
-    const imgLeft = PADDING + (contentW - drawW) / 2;
-    const imgTop = PADDING + (contentH - drawH) / 2;
+    const imgLeft = (contentW - drawW) / 2;
+    const imgTop = (contentH - drawH) / 2;
 
     setLayout({ imgLeft, imgTop, imgW: drawW, imgH: drawH });
   };
@@ -70,14 +69,7 @@ export default function RoomCoverImage({ coverUrl, loading, detectedItems = [], 
   return (
     <div
       ref={wrapRef}
-      className="position-relative w-100 mb-3 d-flex align-items-center justify-content-center"
-      style={{
-        background: "#F3F6FB",
-        borderRadius: 12,
-        height: 360,
-        border: "1px solid #E6EDF7",
-        overflow: "hidden",
-      }}
+      className="position-relative w-100 h-auto d-flex align-items-center justify-content-center rounded-2 border bg-light overflow-hidden"
     >
       {!coverUrl ? (
         <div className="text-muted">이미지가 없습니다</div>
@@ -88,13 +80,7 @@ export default function RoomCoverImage({ coverUrl, loading, detectedItems = [], 
             src={coverUrl}
             alt="preview"
             onLoad={recalc}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-              padding: PADDING,
-              display: "block",
-            }}
+            className="w-100 d-block"
           />
 
           {/* Bounding boxes overlay */}
@@ -113,38 +99,31 @@ export default function RoomCoverImage({ coverUrl, loading, detectedItems = [], 
               return (
                 <div
                   key={it.id ?? `${name}-${left}-${top}`}
+                  className="position-absolute"
                   style={{
-                    position: "absolute",
                     left,
                     top,
                     width,
                     height,
-                    border: isActive ? "3px solid #dc3545" : "2px solid #0d6efd",
-                    boxShadow: isActive ? "0 0 0 2px rgba(220,53,69,0.2)" : "none",
+                    border: isActive ? "3px solid var(--bs-primary)" : "3px solid #000",
+                    boxShadow: isActive ? "0 0 10px 5px rgba(255, 255, 255, 0.5)" : "none",
                     boxSizing: "border-box",
                     borderRadius: 6,
                     opacity: isDimmed ? 0.5 : 1,
-                    transition: "opacity 0.15s ease, border 0.15s ease",
+                    transition: "all 0.15s ease",
                   }}
                 >
                   {/* 라벨 */}
                   <div
+                    className="position-absolute left-0 top-0 py-1 px-2 ms-1 rounded-top-1 text-white text-nowrap overflow-hidden"
                     style={{
-                      position: "absolute",
-                      left: 0,
-                      top: 0,
-                      transform: "translateY(-110%)",
-                      background: isActive ? "rgba(220,53,69,0.92)" : "rgba(13,110,253,0.92)",
-                      color: "#fff",
-                      fontSize: 12,
-                      padding: "3px 8px",
-                      borderRadius: 8,
-                      whiteSpace: "nowrap",
+                      transform: "translateY(-100%)",
+                      background: isActive ? "var(--bs-primary)" : "#000",
                       maxWidth: 240,
-                      overflow: "hidden",
                       textOverflow: "ellipsis",
                       opacity: isDimmed ? 0.5 : 1,
-                      transition: "opacity 0.15s ease",
+                      transition: "all 0.15s ease",
+                      fontSize: "12px"
                     }}
                     title={label}
                   >

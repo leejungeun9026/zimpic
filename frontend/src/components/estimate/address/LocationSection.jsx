@@ -20,10 +20,11 @@ export default function LocationSection({
   bottomNote,
 }) {
   return (
-    <div className="mb-4">
-      <SectionHeader title={title} right={right} />
-
-      <div className="card p-4">
+    <div className="card border-secondary border-opacity-10 rounded-4">
+      <div className="card-header px-3 py-4 pb-0 bg-transparent border-0">
+        <SectionHeader title={title} right={right} />
+      </div>
+      <div className="card-body">
         <AddressField
           value={addressValue}
           placeholder="주소를 검색해 주세요"

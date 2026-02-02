@@ -6,6 +6,7 @@ import ExtraItemAdder from "./ExtraItemAdder";
 import { useState } from "react";
 
 export default function RoomAnalysisSection({
+  idx,
   room,
   roomId,
   coverUrl,
@@ -21,47 +22,47 @@ export default function RoomAnalysisSection({
   furnitureById,
   onUpdateItem,
 }) {
-  
+
   // 사진 위에 BBOX 강조
   const [hoveredId, setHoveredId] = useState(null);
 
-
-
   return (
-    <div className="card mb-4">
-      <div className="card-body">
-        <div className="fw-bold mb-1">{room.type}</div>
-        <div className="text-muted small mb-3">
-          잘못 인식되거나 이삿짐에 포함되지 않는 가구는 체크박스를 해제해주세요
-        </div>
-
-        <RoomCoverImage
-          coverUrl={coverUrl}
-          loading={loading}
-          detectedItems={detectedItems}
-          activeId={hoveredId}
-        />
-
-        <DetectedItemList
-          loading={loading}
-          items={detectedItems}
-          roomId={roomId}
-          onToggle={onToggleItem}
-          onSizeChange={onSizeChange}
-          onHoverItem={setHoveredId}
-          onRemoveManualItem={onRemoveManualItem}
-          furnitureById={furnitureById}
-          onUpdateItem={onUpdateItem}
-        />
-
-        <ExtraItemAdder
-          loading={loading}
-          options={extraOptions}
-          value={extraItem}
-          onChange={onChangeExtraItem}
-          onAdd={onAddExtraItem}
-        />
+    <div className="py-3 border-bottom">
+      <div className="d-inline-flex align-items-center gap-1 mb-3">
+        <h5 className="fw-bold" style={{ fontSize: "18px" }}>
+          {idx + 1}. {room.type}
+        </h5>
+        <span className="badge rounded-pill text-bg-primary bg-opacity-25 text-primary">
+          {detectedItems.length}개 분석
+        </span>
       </div>
+
+      <RoomCoverImage
+        coverUrl={coverUrl}
+        loading={loading}
+        detectedItems={detectedItems}
+        activeId={hoveredId}
+      />
+
+      <DetectedItemList
+        loading={loading}
+        items={detectedItems}
+        roomId={roomId}
+        onToggle={onToggleItem}
+        onSizeChange={onSizeChange}
+        onHoverItem={setHoveredId}
+        onRemoveManualItem={onRemoveManualItem}
+        furnitureById={furnitureById}
+        onUpdateItem={onUpdateItem}
+      />
+
+      <ExtraItemAdder
+        loading={loading}
+        options={extraOptions}
+        value={extraItem}
+        onChange={onChangeExtraItem}
+        onAdd={onAddExtraItem}
+      />
     </div>
   );
 }

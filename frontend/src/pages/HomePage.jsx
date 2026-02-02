@@ -6,6 +6,7 @@ import { useEstimateStore } from "../store/estimateStore";
 import MoveTypeSelector from "../components/estimate/home/MoveTypeSelector";
 import SizeRangeSlider from "../components/estimate/home/SizeRangeSlider";
 import RoomsSection from "../components/estimate/home/RoomsSection";
+import { CircleAlert } from "lucide-react";
 
 // 화면에서 선택 가능한 공간 목록
 const SPACE_OPTIONS = ["거실", "주방", "베란다", "다용도실", "방"];
@@ -134,88 +135,107 @@ export default function HomePage() {
   };
 
   return (
-    <div className="container py-4">
-      <div className="card shadow-sm p-4">
-        <StepIndicator currentStep={1} />
+    <div className="container-fluid py-4">
+      <div className="card shadow-sm border-secondary rounded-4 border-opacity-10">
+        <div className="card-body px-3 px-sm-4">
+          <StepIndicator currentStep={1} />
 
-        <h2 className="fw-bold mb-2">방 정보 입력</h2>
-        <p className="text-muted mb-4 small">
-          방 사진을 업로드해 주세요. 입력하신 정보는 이사 비용 산출에 사용됩니다.
-        </p>
+          <article className="title mb-5">
+            <h2 className="fw-bold mb-2">이사 정보 입력</h2>
+            <p className="text-muted small">
+              이사 비용 계산에 필요한 정보들을 입력해 주세요.
+            </p>
+          </article>
 
-        {/* 이사 유형 선택 */}
-        <MoveTypeSelector
-          value={basicInfo.moveType}
-          onChange={(moveType) => setBasicInfo({ moveType })}
-        />
+          <section className="mb-5">
+            {/* 이사 유형 선택 */}
+            <MoveTypeSelector
+              value={basicInfo.moveType}
+              onChange={(moveType) => setBasicInfo({ moveType })}
+            />
+          </section>
 
-        {/* 평수 */}
-        <SizeRangeSlider
-          value={size}
-          onChange={(nextSize) => setBasicInfo({ size: nextSize })}
-        />
+          <section className="mb-5">
+            {/* 평수 */}
+            <SizeRangeSlider
+              value={size}
+              onChange={(nextSize) => setBasicInfo({ size: nextSize })}
+            />
+          </section>
 
-        {/* 공간 섹션 */}
-        <div className="fw-bold mb-2 mt-4">공간 선택</div>
-        <p className="text-muted mb-4">
-          방을 제외한 각 공간(거실,주방,베란다 등)은 한 번만 추가가 가능합니다.
-        </p>
-
-        {(rooms ?? []).length === 0 ? (
-          <div
-            className="border rounded-3 p-4 text-center text-muted mb-3"
-            style={{ background: "#fafafa" }}
-          >
-            <div className="fw-semibold">아직 추가된 공간이 없어요.</div>
-            <div className="small">
-              + 공간 추가하기 버튼을 눌러 공간을 추가해 주세요.
+          <section className="mb-5">
+            {/* 공간 섹션 */}
+            <div className="subtitle mb-3">
+              <h5 className="fw-bold mb-1" style={{ fontSize: "18px" }}>공간 선택</h5>
+              <p className="text-muted small">
+                각 공간(거실, 주방, 베란다, 다용도실)은 한 개씩, 방은 최대 5개 업로드 할 수 있어요.
+              </p>
             </div>
+            <div className="row g-3">
+              {(rooms ?? []).length === 0 ? (
+                <div
+                  className="col-12"
+                >
+                  <div className="card bg-light border-0 rounded-3">
+                    <div className="card-body py-4 text-center">
+                      <CircleAlert size={18} className="mb-2" />
+                      <div className="fw-semibold">아직 추가된 공간이 없어요.</div>
+                      <div className="small text-muted">
+                        + 공간 추가하기 버튼을 눌러 공간을 추가해 주세요.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <RoomsSection
+                  rooms={rooms ?? []}
+                  spaceOptions={SPACE_OPTIONS}
+                  uniqueSpaces={UNIQUE_SPACES}
+                  canAddMore={canAddMore}
+                  onAddSpace={handleAddSpace}
+                  previewMap={previewMap}
+                  onRemoveRoom={removeRoom}
+                  onChangeRoomType={handleChangeRoomType}
+                  onAddImages={addRoomImages}
+                  onRemoveImage={removeRoomImage}
+                />
+              )}
+
+              {/* rooms가 0일 때도 +추가 버튼은 보여야 해서, 위 분기 밖에 둠 */}
+              {(rooms ?? []).length === 0 && (
+                <RoomsSection
+                  rooms={[]}
+                  spaceOptions={SPACE_OPTIONS}
+                  uniqueSpaces={UNIQUE_SPACES}
+                  canAddMore={canAddMore}
+                  onAddSpace={handleAddSpace}
+                  previewMap={previewMap}
+                  onRemoveRoom={removeRoom}
+                  onChangeRoomType={handleChangeRoomType}
+                  onAddImages={addRoomImages}
+                  onRemoveImage={removeRoomImage}
+                />
+              )}
+            </div>
+          </section>
+
+          <section>
+            {/* 참고사항 */}
+            <div className="alert alert-warning rounded-3">
+              <div className="fw-semibold mb-2">주의사항</div>
+              <ul className="mb-0 small text-muted ps-3" style={{ listStyleType: "disc" }}>
+                <li>공간을 대표하는 전체 사진 1장을 가전과 가구가 잘 보이도록 업로드 해주세요.</li>
+                <li>사진이 어둡거나 흔들리면 분석 정확도가 낮아질 수 있어요.</li>
+                <li>업로드된 사진은 견적 산출 목적 외에는 사용하지 않아요.</li>
+              </ul>
+            </div>
+          </section>
+
+          <div className="d-flex justify-content-center">
+            <button type="button" className="ms-auto btn btn-lg fs-6 btn-primary rounded-2 px-4" onClick={handleNext}>
+              다음
+            </button>
           </div>
-        ) : (
-          <RoomsSection
-            rooms={rooms ?? []}
-            spaceOptions={SPACE_OPTIONS}
-            uniqueSpaces={UNIQUE_SPACES}
-            canAddMore={canAddMore}
-            onAddSpace={handleAddSpace}
-            previewMap={previewMap}
-            onRemoveRoom={removeRoom}
-            onChangeRoomType={handleChangeRoomType}
-            onAddImages={addRoomImages}
-            onRemoveImage={removeRoomImage}
-          />
-        )}
-
-        {/* rooms가 0일 때도 +추가 버튼은 보여야 해서, 위 분기 밖에 둠 */}
-        {(rooms ?? []).length === 0 && (
-          <RoomsSection
-            rooms={[]}
-            spaceOptions={SPACE_OPTIONS}
-            uniqueSpaces={UNIQUE_SPACES}
-            canAddMore={canAddMore}
-            onAddSpace={handleAddSpace}
-            previewMap={previewMap}
-            onRemoveRoom={removeRoom}
-            onChangeRoomType={handleChangeRoomType}
-            onAddImages={addRoomImages}
-            onRemoveImage={removeRoomImage}
-          />
-        )}
-
-        {/* 참고사항 */}
-        <div className="alert alert-light border rounded-3 mt-4 mb-3">
-          <div className="fw-semibold mb-2">참고사항</div>
-          <ul className="mb-0 small text-muted ps-3" style={{ listStyleType: "disc" }}>
-            <li>공간 전체가 보이도록 대표 사진 1장을 업로드해 주세요.</li>
-            <li>사진이 어둡거나 흔들리면 분석 정확도가 낮아질 수 있어요.</li>
-            <li>업로드된 사진은 견적 산출 목적 외에는 사용하지 않아요.</li>
-          </ul>
-        </div>
-
-        <div className="d-flex justify-content-center">
-          <button type="button" className="btn btn-primary" onClick={handleNext}>
-            다음
-          </button>
         </div>
       </div>
     </div>

@@ -12,19 +12,19 @@ export default function FloorCarryFields({
   return (
     <div className="row g-3 align-items-end">
       <div className="col-12 col-md-5">
-        <label className="form-label fw-semibold">층</label>
-        <div className="input-group">
+        <label className="form-label fw-semibold">층수</label>
+        <div className="d-flex align-items-baseline gap-2">
           <input
             type="number"
             inputMode="numeric"
-            className="form-control"
+            className="form-control rounded-1"
             placeholder="층수 입력"
             min={1}
             disabled={disabled}
             value={floorValue || ""}
             onChange={(e) => onChangeFloor(Number(e.target.value))}
           />
-          <span className="input-group-text">층</span>
+          <span >층</span>
         </div>
       </div>
 

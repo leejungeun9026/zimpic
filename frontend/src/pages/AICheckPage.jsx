@@ -110,7 +110,7 @@ export default function AICheckPage() {
 
   if (roomsWithImages.length === 0) {
     return (
-      <div className="container py-4">
+      <div className="container-fluid py-4">
         <div className="card shadow-sm p-4">
           <StepIndicator currentStep={2} />
           <p className="text-muted mb-0">
@@ -127,69 +127,78 @@ export default function AICheckPage() {
   }
 
   return (
-    <div className="container py-4">
-      <div className="card shadow-sm p-4">
-        <StepIndicator currentStep={2} />
+    <div className="container-fluid py-4">
+      <div className="card shadow-sm border-secondary rounded-4 border-opacity-10">
+        <div className="card-body px-3 px-sm-4">
+          <StepIndicator currentStep={2} />
 
-        <h2 className="mb-2 fw-bold">이미지 분석 결과</h2>
-        <p className="text-muted mb-4 small">
-          입력하신 정보를 바탕으로 예상 이사 비용을 계산했습니다. 실제 비용은 업체 견적에 따라 달라질 수 있습니다.
-        </p>
+          <article className="title mb-4">
+            <h2 className="fw-bold mb-2">이미지 분석 결과</h2>
+            <p className="text-muted small">
+              올려주신 이미지에서 이삿짐을 분석했어요. <br />잘못 인식되거나 이삿짐에 포함되지 않는 가구는 체크박스를 해제해주세요.
+            </p>
+          </article>
 
-        <div className="mb-3">
-          <h5 className="mb-1 fw-bold">분석 목록</h5>
-        </div>
+          <section className="mb-5">
+            <div className="row g-3">
+              {roomsWithImages.map((room, idx) => {
+                const roomId = room.id;
+                const detectedItems = analysisByRoom?.[roomId] ?? [];
+                const coverUrl = coverPreviewByRoomId.get(roomId);
 
-        {roomsWithImages.map((room) => {
-          const roomId = room.id;
-          const detectedItems = analysisByRoom?.[roomId] ?? [];
-          const coverUrl = coverPreviewByRoomId.get(roomId);
+                return (
+                  <div className="col-12">
+                    <RoomAnalysisSection
+                      idx={idx}
+                      key={roomId}
+                      room={room}
+                      roomId={roomId}
+                      coverUrl={coverUrl}
+                      loading={loading}
+                      detectedItems={detectedItems}
+                      extraOptions={furnitureList}
+                      extraItem={extraItemId ?? ""}
+                      onChangeExtraItem={setExtraItemId}
+                      onAddExtraItem={() => handleAddExtra(roomId)}
+                      onToggleItem={toggleItem}
+                      onSizeChange={handleSizeChange}
+                      onRemoveManualItem={removeManualItem}
+                      furnitureById={furnitureById}
+                      onUpdateItem={(rid, itemId, patch) =>
+                        updateDetectedItem(rid, itemId, patch)
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </section>
 
-          return (
-            <RoomAnalysisSection
-              key={roomId}
-              room={room}
-              roomId={roomId}
-              coverUrl={coverUrl}
-              loading={loading}
-              detectedItems={detectedItems}
-              extraOptions={furnitureList}
-              extraItem={extraItemId ?? ""}
-              onChangeExtraItem={setExtraItemId}
-              onAddExtraItem={() => handleAddExtra(roomId)}
-              onToggleItem={toggleItem}
-              onSizeChange={handleSizeChange}
-              onRemoveManualItem={removeManualItem}
-              furnitureById={furnitureById}
-              onUpdateItem={(rid, itemId, patch) =>
-                updateDetectedItem(rid, itemId, patch)
-              }
-            />
-          );
-        })}
+          <section>
+            <div className="alert alert-warning rounded-3">
+              <div class="fw-semibold mb-2">참고사항</div>
+              <ul className="mb-0 small text-muted ps-3" style={{ listStyleType: "disc" }}>
+                <li>AI 분석 결과는 업로드된 대표 이미지 기준으로 산출됩니다.</li>
+                <li>사진에 보이지 않는 짐은 직접 추가해 주세요.</li>
+                <li>짐 크기&middot;개수는 실제 방문 견적 시 조정될 수 있습니다.</li>
+                <li>선택하지 않은 항목은 최종 견적에 포함되지 않습니다.</li>
+              </ul>
+            </div>
+          </section>
 
-        <div className="border rounded-3 p-3 mt-4 mb-3" style={{ background: "#f8f9fa" }}>
-          <div className="fw-semibold mb-2">참고사항</div>
-          <ul className="mb-0 small text-muted ps-3" style={{ listStyleType: "disc" }}>
-            <li>AI 분석 결과는 업로드된 대표 이미지 기준으로 산출됩니다.</li>
-            <li>사진에 보이지 않는 짐은 직접 추가해 주세요.</li>
-            <li>짐 크기·개수는 실제 방문 견적 시 조정될 수 있습니다.</li>
-            <li>선택하지 않은 항목은 최종 견적에 포함되지 않습니다.</li>
-          </ul>
-        </div>
+          <div className="d-flex justify-content-between mt-4">
+            <button
+              className="btn btn-lg fs-6 btn-light text-secondary rounded-2"
+              onClick={() => navigate("/HomePage")}
+              disabled={loading}
+            >
+              이전 단계
+            </button>
 
-        <div className="d-flex justify-content-between mt-4">
-          <button
-            className="btn btn-outline-secondary px-4"
-            onClick={() => navigate("/HomePage")}
-            disabled={loading}
-          >
-            이전 단계
-          </button>
-
-          <button className="btn btn-primary px-4" onClick={handleNext} disabled={loading}>
-            다음 단계
-          </button>
+            <button className="ms-auto btn btn-lg fs-6 btn-primary rounded-2" onClick={handleNext} disabled={loading}>
+              다음 단계
+            </button>
+          </div>
         </div>
       </div>
     </div>

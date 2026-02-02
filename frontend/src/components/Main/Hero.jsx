@@ -1,29 +1,28 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera } from "lucide-react";
+import { Camera, Sparkles } from "lucide-react";
 
 const Hero = () => {
   const navigate = useNavigate();
 
   return (
-    <section id="intro" className="lp-hero">
-      <div className="lp-container">
-        <h1 className="lp-hero__title">
-          사진 한 장으로<br />이사 견적 끝!
-        </h1>
-
-        <p className="lp-hero__subtitle">
-          복잡한 방문 견적 없이, AI가 사진을 분석해 정확한 견적을 내드립니다.
-        </p>
-
-        <button
-          type="button"
-          onClick={() => navigate("/HomePage")}
-          className="lp-btn lp-btn--primary lp-btn--icon"
-        >
-          <Camera size={24} />
-          <span>지금 견적 받아보기</span>
-        </button>
+    <section id="main-hero">
+      <div className="inner  position-relative start-0 translate-middle-y" style={{ top: "40%" }}>
+        <div className="container-fluid px-4 text-start">
+          <h1 className="fw-semibold pb-2">
+            <span className="fw-bold">사진</span><span className="opacity-50">만 올리면, </span><br /><span className="fw-bold">AI가 알아서 계산</span><span className="opacity-50">해주니까!</span>
+          </h1>
+          <p className="pb-4">
+            가구 인식부터 적재량 계산, <br className="d-sm-none" />추천 트럭과 예상 비용까지 한 번에.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/HomePage")}
+            className="btn btn-primary rounded-3 py-2 px-3"
+          >
+            <Sparkles size={16} className="mb-1 me-1" />
+            <span>이사 견적 계산해보기</span>
+          </button>
+        </div>
       </div>
     </section>
   );

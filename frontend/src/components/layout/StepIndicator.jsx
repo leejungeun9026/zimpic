@@ -1,25 +1,33 @@
+import { Check } from "lucide-react";
+
 function StepIndicator({ currentStep }) {
   const steps = [1, 2, 3, 4];
 
   return (
     <div className="step-indicator">
-      {steps.map((step) => (
-        <div key={step} className="step-wrapper">
-          <div
-            className={
-              step === currentStep
-                ? "step-circle active"
-                : "step-circle"
-            }
-          >
-            {step}
-          </div>
+      {steps.map((step) => {
+        const isCompleted = step < currentStep;
+        const isActive = step === currentStep;
 
-          {step !== steps.length && (
-            <div className="step-line" />
-          )}
-        </div>
-      ))}
+        return (
+          <div key={step} className="step-wrapper">
+            <div
+              className={`step-circle
+                ${isCompleted ? "completed" : ""}
+                ${isActive ? "active" : ""}
+              `}
+            >
+              {isCompleted ? <Check size={16} /> : step}
+            </div>
+
+            {step !== steps.length && (
+              <div
+                className={`step-line ${isCompleted ? "completed" : ""}`}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
