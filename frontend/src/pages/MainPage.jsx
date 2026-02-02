@@ -1,13 +1,14 @@
-import React from 'react';
-import Hero from '../components/Main/Hero';
-import Features from '../components/Main/Features';
-import Steps from '../components/Main/Steps';
-import Trust from '../components/Main/Trust';
 import CTASection from '../components/Main/CTASection';
+import Features from '../components/Main/Features';
+import Hero from '../components/Main/Hero';
 import '../components/Main/Main.css';
+import Steps from '../components/Main/Steps';
 
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import Recommend from '../components/Main/Recommend';
+import Estimate from '../components/Main/Estimate';
+
 
 const MainPage = () => {
 
@@ -27,13 +28,14 @@ const MainPage = () => {
   }, [location.hash]);
 
   return (
-      <div className="main-page">
-          <Hero />
-          <Features />
-          <Steps />
-          <Trust />
-          <CTASection />
-      </div>
+    <div className="main-page">
+      <Hero />
+      <Features />
+      <Steps />
+      <Estimate />
+      <Recommend />
+      <CTASection />
+    </div>
   );
 };
 

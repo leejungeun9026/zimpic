@@ -8,8 +8,6 @@ import AddressPage from "./pages/AddressPage";
 import ResultPage from "./pages/ResultPage";
 import MainPage from "./pages/MainPage";
 
-import "./styles/base.css";
-import "./styles/components.css";
 
 function App() {
   return (

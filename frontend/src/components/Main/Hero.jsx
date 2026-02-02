@@ -5,8 +5,8 @@ const Hero = () => {
   const navigate = useNavigate();
 
   return (
-    <section id="main-hero" className="position-relative overflow-hidden text-white" style={{ height: "60vh" }}>
-      <div className="container position-relative z-index-9 text-start start-0 translate-middle-y" style={{ top: "40%" }}>
+    <section id="main-hero">
+      <div className="container position-relative text-start start-0 translate-middle-y" style={{ top: "40%" }}>
         <h1 className="fw-semibold pb-2">
           <span className="fw-bold">사진</span><span className="opacity-50">만 올리면, </span><br /><span className="fw-bold">AI가 알아서 계산</span><span className="opacity-50">해주니까!</span>
         </h1>
