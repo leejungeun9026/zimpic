@@ -1,4 +1,4 @@
-import InfoTooltip from "../../common/InfoTooltip";
+import InfoPopover from "../../common/InfoPopover";
 
 export default function SelectedInfoTable({
   moveTypeText,
@@ -38,7 +38,7 @@ export default function SelectedInfoTable({
                   <td className="text-muted">
                     이사 박스(5호)
                     <span className="ms-2 align-middle">
-                      <InfoTooltip
+                      <InfoPopover
                         content={
                           <div style={{ fontSize: 13, lineHeight: 1.4 }}>
                             {boxesDescription || "평수 기준 평균 박스 수로 계산했어요."}
@@ -64,9 +64,8 @@ export default function SelectedInfoTable({
                 <td className="text-end fw-semibold">
                   {moveInfo.toUnknown
                     ? "미정"
-                    : `${moveInfo.toFloor || "-"}층 · ${
-                        moveInfo.toElevator ? "엘리베이터 있음" : "엘리베이터 없음"
-                      }`}
+                    : `${moveInfo.toFloor || "-"}층 · ${moveInfo.toElevator ? "엘리베이터 있음" : "엘리베이터 없음"
+                    }`}
                 </td>
               </tr>
 
