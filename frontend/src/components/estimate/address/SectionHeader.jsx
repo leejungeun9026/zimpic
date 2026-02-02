@@ -6,11 +6,11 @@ export default function SectionHeader({ title, right }) {
           style={{
             width: 4,
             height: 18,
-            background: "#2F6BFF",
+            background: "var(--bs-primary)",
             borderRadius: 2,
           }}
         />
-        <h5 className="mb-0">{title}</h5>
+        <h5 className="fw-semibold text-primary">{title} 정보</h5>
       </div>
 
       {right ? <div>{right}</div> : null}

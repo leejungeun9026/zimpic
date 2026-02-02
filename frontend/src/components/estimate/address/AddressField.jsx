@@ -1,18 +1,17 @@
 export default function AddressField({
-  label = "주소",
   value,
-  placeholder,
   disabled,
   onFindAddress,
+  title
 }) {
   return (
     <div className="mb-4">
-      <label className="form-label fw-semibold">{label}</label>
+      <p className="form-label fw-semibold" htmlFor="">{title} 주소</p>
       <div className="d-flex gap-1">
         <input
           type="text"
           className="form-control rounded-1"
-          placeholder={placeholder}
+          placeholder="도로명 주소"
           disabled={disabled}
           value={value}
           onClick={onFindAddress}

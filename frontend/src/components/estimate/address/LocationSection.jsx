@@ -16,8 +16,6 @@ export default function LocationSection({
   onChangeLadder,
   fieldsDisabled,
   idPrefix,
-  hint,
-  bottomNote,
 }) {
   return (
     <div className="card border-secondary border-opacity-10 rounded-4">
@@ -26,13 +24,14 @@ export default function LocationSection({
       </div>
       <div className="card-body">
         <AddressField
+          title={title}
           value={addressValue}
-          placeholder="주소를 검색해 주세요"
           disabled={addressDisabled}
           onFindAddress={onFindAddress}
         />
 
         <FloorCarryFields
+          title={title}
           idPrefix={idPrefix}
           disabled={fieldsDisabled}
           floorValue={floorValue}
@@ -41,10 +40,7 @@ export default function LocationSection({
           onChangeElevator={onChangeElevator}
           ladderChecked={ladderChecked}
           onChangeLadder={onChangeLadder}
-          showHint={hint}
         />
-
-        {bottomNote ? <div className="text-muted small mt-3">{bottomNote}</div> : null}
       </div>
     </div>
   );

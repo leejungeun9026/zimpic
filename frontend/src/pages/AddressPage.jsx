@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import StepIndicator from "../components/layout/StepIndicator";
 import { useEstimateStore } from "../store/estimateStore";
@@ -78,28 +78,6 @@ export default function AddressPage() {
     }).open();
   };
 
-  // 1층 안내 문구 계산
-  const fromFloorNotice = useMemo(() => {
-    if (moveInfo.fromFloor > 1) return null;
-    if (moveInfo.fromLadder || moveInfo.fromElevator) {
-      return "※ 1층에서는 보통 사다리차·엘리베이터 사용이 필요 없거나 추가 비용이 발생하지 않을 수 있어요.";
-    }
-    return null;
-  }, [moveInfo.fromFloor, moveInfo.fromLadder, moveInfo.fromElevator]);
-
-  const toFloorNotice = useMemo(() => {
-    if (isDestinationUnknown) return null;
-    if (moveInfo.toFloor > 1) return null;
-    if (moveInfo.toLadder || moveInfo.toElevator) {
-      return "※ 1층에서는 보통 사다리차·엘리베이터 사용이 필요 없거나 추가 비용이 발생하지 않을 수 있어요.";
-    }
-    return null;
-  }, [
-    isDestinationUnknown,
-    moveInfo.toFloor,
-    moveInfo.toLadder,
-    moveInfo.toElevator,
-  ]);
 
   return (
     <div className="container-fluid py-4">
@@ -115,7 +93,7 @@ export default function AddressPage() {
           <section className="mb-4">
             {/* 출발지 */}
             <LocationSection
-              title="출발지 정보"
+              title="출발지"
               idPrefix="from"
               right={null}
               addressValue={moveInfo.fromAddress}
@@ -128,15 +106,13 @@ export default function AddressPage() {
               ladderChecked={moveInfo.fromLadder}
               onChangeLadder={(v) => setMoveInfo({ fromLadder: v })}
               fieldsDisabled={loading}
-              hint={true}
-              bottomNote={fromFloorNotice}
             />
           </section>
 
           <section>
             {/* 도착지 */}
             <LocationSection
-              title="도착지 정보"
+              title="도착지"
               idPrefix="to"
               right={
                 <div className="form-check">
@@ -163,12 +139,6 @@ export default function AddressPage() {
               ladderChecked={moveInfo.toLadder}
               onChangeLadder={(v) => setMoveInfo({ toLadder: v })}
               fieldsDisabled={isDestinationUnknown || loading}
-              hint={false}
-              bottomNote={
-                isDestinationUnknown
-                  ? "도착지가 미정이면 도착지 정보는 나중에 입력할 수 있어요."
-                  : toFloorNotice
-              }
             />
           </section>
 
