@@ -1,6 +1,36 @@
 import { Container, HandCoins, Van, VectorSquare } from "lucide-react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useLayoutEffect, useRef } from "react";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const Features = () => {
+  const ref = useRef(null);
+
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      const cards = gsap.utils.toArray(".feature-card");
+
+      gsap.set(cards, { autoAlpha: 0, y: 30 });
+
+      gsap.to(cards, {
+        autoAlpha: 1,
+        y: 0,
+        stagger: 0.15,
+        duration: 0.7,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: ref.current,
+          start: "top 75%",
+          once: true,
+        },
+      });
+    }, ref);
+
+    return () => ctx.revert();
+  }, []);
+
   const features = [
     {
       icon: <VectorSquare size={24} />,
@@ -32,13 +62,14 @@ const Features = () => {
           <p className="text-secondary pb-3">사진 한 장으로 가구 인식부터 예상 비용까지 자동 계산합니다.</p>
         </div>
 
-        <div className="row row-cols-1 row-cols-sm-2 g-3 main-inner">
+        <div ref={ref} className="row row-cols-1 row-cols-sm-2 g-3 main-inner">
           {features.map((feature, index) => (
             <div key={index} className="col">
-              <div className="card h-100 rounded-3 shadow-sm border border-opacity-10 text-center">
+              <div className="feature-card card h-100 rounded-3 shadow-sm border border-opacity-10 text-center">
                 <div className="card-body py-4">
+                  <h6 className="fw-semibold pb-3">{feature.title}</h6>
                   <div className="icon-box-48 mx-auto bg-primary bg-opacity-10 rounded-3 text-primary mb-3">{feature.icon}</div>
-                  <p className="fw-semibold">{feature.desc}</p>
+                  <p className="small">{feature.desc}</p>
                 </div>
               </div>
             </div>
