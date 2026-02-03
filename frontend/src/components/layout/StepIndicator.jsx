@@ -2,33 +2,28 @@ import { Check } from "lucide-react";
 
 function StepIndicator({ currentStep }) {
   const steps = [1, 2, 3, 4];
+  const tests = ["이사 정보 입력", "이미지 분석", "주소 입력", "결과 확인"];
 
   return (
     <div className="step-indicator">
-      {steps.map((step) => {
+      {steps.map((step, idx) => {
         const isCompleted = step < currentStep;
         const isActive = step === currentStep;
 
         return (
-          <div key={step} className="step-wrapper">
-            <div
-              className={`step-circle
-                ${isCompleted ? "completed" : ""}
-                ${isActive ? "active" : ""}
-              `}
-            >
+          <div key={step} className={`step-wrapper 
+            ${isCompleted ? "completed" : ""}
+            ${isActive ? "active" : ""}`
+          }
+          >
+            <div className="step-circle">
               {isCompleted ? <Check size={16} /> : step}
             </div>
-
-            {step !== steps.length && (
-              <div
-                className={`step-line ${isCompleted ? "completed" : ""}`}
-              />
-            )}
+            <p className="step-text">{tests[idx]}</p>
           </div>
         );
       })}
-    </div>
+    </div >
   );
 }
 

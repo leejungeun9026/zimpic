@@ -81,6 +81,7 @@ export default function RoomCoverImage({ coverUrl, loading, detectedItems = [], 
             alt="preview"
             onLoad={recalc}
             className="w-100 d-block"
+            style={{ maxWidth: "300px" }}
           />
 
           {/* Bounding boxes overlay */}
@@ -93,8 +94,9 @@ export default function RoomCoverImage({ coverUrl, loading, detectedItems = [], 
               const isDimmed = activeId != null && it.id !== activeId;
 
               const name = it.name ?? "UNKNOWN";
-              const conf = typeof it.confidence === "number" ? ` ${(it.confidence * 100).toFixed(0)}%` : "";
-              const label = `${name}${conf}`;
+              // const conf = typeof it.confidence === "number" ? ` ${(it.confidence * 100).toFixed(0)}%` : "";
+              // const label = `${name}${conf}`;
+              const label = `${name}`;
 
               return (
                 <div

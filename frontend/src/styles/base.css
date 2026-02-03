@@ -1,25 +1,69 @@
+/* ====== Reset & Base ====== */
 * {
-  box-sizing: border-box;
+  border-collapse: collapse;
+  box-sizing: border-box
 }
 
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: white;
-
-}
-
-ul {
   padding: 0;
-  margin: 0;
-  list-style: none;
+  font-family: "Pretendard";
+  letter-spacing: -0.5px;
+  overflow-x: hidden;
+  min-width: 350px;
 }
 
-button {
-  cursor: pointer;
+.inner {
+  width: 100%;
+  max-width: 1024px;
+  margin: 0 auto;
 }
 
 .content-wrapper {
-  max-width: 768px;
   margin: 0 auto;
+  max-width: 768px;
+  min-height: calc(100vh - 67px - 163px);
+}
+
+/* ====== Upload Area ====== */
+.upload-area {
+  border: 2px dashed #ccc;
+  padding: 30px;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+/* ====== List ====== */
+.item-list {
+  list-style: none;
+  padding: 0;
+}
+
+.item-list li {
+  margin-bottom: 10px;
+}
+
+/* ====== Notice ====== */
+.notice-box {
+  background-color: #f0f0f0;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* ====== Result ====== */
+.price {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.price-detail,
+.summary {
+  list-style: none;
+  padding: 0;
+}
+
+.price-detail li,
+.summary li {
+  margin-bottom: 6px;
 }

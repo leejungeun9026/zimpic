@@ -81,8 +81,8 @@ export default function AddressPage() {
 
   return (
     <div className="container-fluid py-4">
-      <div className="card shadow-sm border-secondary rounded-4 border-opacity-10">
-        <div className="card-body px-3 px-sm-4">
+      <div className="page_card">
+        <div className="card-body">
           <StepIndicator currentStep={3} />
 
           <article class="title mb-4">

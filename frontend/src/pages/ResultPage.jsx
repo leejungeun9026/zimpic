@@ -279,63 +279,66 @@ export default function ResultPage() {
 
   return (
     <div className="container-fluid py-4">
-
-      <StepIndicator currentStep={4} />
-
       <div ref={pdfRef}>
+        <div className="page_card">
+          <div className="card-body">
 
-        <article className="title mb-4">
-          <h2 className="fw-bold mb-2">이사 비용 계산 결과</h2>
-          <p className="text-muted small">
-            입력하신 정보를 바탕으로 예상 이사 비용을 계산했어요. <br />실제 비용은 업체 견적에 따라 달라질 수 있어요.
-          </p>
-        </article>
+            <StepIndicator currentStep={4} />
 
-        <section className="mb-4">
-          <ResultSummaryBox totalPrice={totalPrice} />
-        </section>
 
-        <section className="mb-4">
-          <SelectedInfoTable
-            moveTypeText={moveTypeText}
-            sizeText={sizeText}
-            moveInfo={moveInfo}
-            distanceKm={distanceKm}
-            ladderText={ladderText}
-            totalSpecialCount={totalSpecialCount}
-            totalItemCount={totalItemCount}
-            specialLines={specialLines}
-            disassemblyNames={disassemblyNames}
-            boxesCount={summary?.boxes_count}
-            boxesDescription={summary?.boxes_description}
-          />
-        </section>
+            <article className="title mb-4">
+              <h2 className="fw-bold mb-2">이사 비용 계산 결과</h2>
+              <p className="text-muted small">
+                입력하신 정보를 바탕으로 예상 이사 비용을 계산했어요. <br />실제 비용은 업체 견적에 따라 달라질 수 있어요.
+              </p>
+            </article>
 
-        <section className="mb-4">
-          <RoomItemsSummary
-            roomSummaries={roomSummaries}
-            thumbUrls={thumbUrls}
-            vehicleText={vehicleText}
-            specialFurnitureIdSet={specialFurnitureIdSet}
-            boxesDescription={summary?.boxes_description}
-          />
-        </section>
+            <section className="mb-4">
+              <ResultSummaryBox totalPrice={totalPrice} />
+            </section>
 
-        <section className="mb-4">
-          {/* 서버 sections만으로 렌더 */}
-          <PriceBreakdown sections={pricingSections} totalPrice={totalPrice} />
-        </section>
+            <section className="mb-4">
+              <SelectedInfoTable
+                moveTypeText={moveTypeText}
+                sizeText={sizeText}
+                moveInfo={moveInfo}
+                distanceKm={distanceKm}
+                ladderText={ladderText}
+                totalSpecialCount={totalSpecialCount}
+                totalItemCount={totalItemCount}
+                specialLines={specialLines}
+                disassemblyNames={disassemblyNames}
+                boxesCount={summary?.boxes_count}
+                boxesDescription={summary?.boxes_description}
+              />
+            </section>
 
+            <section className="mb-4">
+              <RoomItemsSummary
+                roomSummaries={roomSummaries}
+                thumbUrls={thumbUrls}
+                vehicleText={vehicleText}
+                specialFurnitureIdSet={specialFurnitureIdSet}
+                boxesDescription={summary?.boxes_description}
+              />
+            </section>
+
+            <section className="mb-4">
+              {/* 서버 sections만으로 렌더 */}
+              <PriceBreakdown sections={pricingSections} totalPrice={totalPrice} />
+            </section>
+
+            <ResultFooterActions
+              onPrev={handlePrev}
+              onSave={handleSavePdf}
+              onResetToHome={() => {
+                reset();
+                navigate("/HomePage");
+              }}
+            />
+          </div>
+        </div>
       </div>
-
-      <ResultFooterActions
-        onPrev={handlePrev}
-        onSave={handleSavePdf}
-        onResetToHome={() => {
-          reset();
-          navigate("/HomePage");
-        }}
-      />
     </div>
   );
 }

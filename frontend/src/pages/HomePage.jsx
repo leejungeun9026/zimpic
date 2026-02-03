@@ -127,20 +127,20 @@ export default function HomePage() {
     const noImageRooms = (rooms ?? []).filter((r) => (r.images?.length ?? 0) === 0);
 
     if (noImageRooms.length > 0) {
-    const names = noImageRooms
-      .map((r, idx) => r.type || `공간 ${r.id ?? idx + 1}`)
-      .join(", ");
-    alert(`아직 사진이 없는 공간이 있어요: ${names}\n각 공간마다 사진을 1장씩 업로드해주세요.`);
-    return;
-  }
+      const names = noImageRooms
+        .map((r, idx) => r.type || `공간 ${r.id ?? idx + 1}`)
+        .join(", ");
+      alert(`아직 사진이 없는 공간이 있어요: ${names}\n각 공간마다 사진을 1장씩 업로드해주세요.`);
+      return;
+    }
 
-  navigate("/AICheckPage");
-};
+    navigate("/AICheckPage");
+  };
 
   return (
     <div className="container-fluid py-4">
-      <div className="card shadow-sm border-secondary rounded-4 border-opacity-10">
-        <div className="card-body px-3 px-sm-4">
+      <div className="page_card">
+        <div className="card-body">
           <StepIndicator currentStep={1} />
 
           <article className="title mb-5">
@@ -166,7 +166,7 @@ export default function HomePage() {
             />
           </section>
 
-          <section className="mb-5">
+          <section className="mb-4">
             {/* 공간 섹션 */}
             <div className="subtitle mb-3">
               <h5 className="fw-bold mb-1" style={{ fontSize: "18px" }}>공간 선택</h5>

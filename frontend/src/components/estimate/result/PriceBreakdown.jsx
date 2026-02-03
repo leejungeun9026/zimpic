@@ -28,21 +28,20 @@ export default function PriceBreakdown({ sections, totalPrice }) {
     const subtitle = key === "LADDER" ? null : desc;
 
     return (
-      <div key={key}>
-        <div className="d-flex justify-content-between mb-2">
+      <div key={key} className="py-3 border-bottom">
+        <div className="d-flex justify-content-between">
           <div>
             <div className="fw-bold">{title}</div>
-            {subtitle ? <div className="text-muted small">{subtitle}</div> : null}
           </div>
-
           <div className="fw-bold">
             {key === "BASE" ? formatWon(amount) : `+${formatWon(amount)}`}
           </div>
         </div>
 
         {/* 라인 아이템(분해/조립 포함)이 있으면 상세 표시 */}
+        {subtitle ? <div className="small opacity-50">{subtitle}</div> : null}
         {lines.length > 0 && (
-          <div className="mt-2 mb-2">
+          <ul className="">
             {lines.map((l, idx) => {
               const lineAmount = Number(l?.amount ?? 0);
               const lineDesc = l?.description ?? "";
@@ -51,22 +50,20 @@ export default function PriceBreakdown({ sections, totalPrice }) {
               if (!lineDesc && lineAmount === 0) return null;
 
               return (
-                <div
+                <li
                   key={`${key}-line-${idx}`}
-                  className="d-flex justify-content-between text-muted small"
+                  className="d-flex justify-content-between small opacity-50"
                   style={{ gap: 12 }}
                 >
-                  <div style={{ minWidth: 0 }}>• {lineDesc || "세부 항목"}</div>
+                  <div style={{ minWidth: 0 }}>&middot; {lineDesc || "세부 항목"}</div>
                   <div style={{ whiteSpace: "nowrap" }}>
                     {lineAmount ? formatWon(lineAmount) : ""}
                   </div>
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
-
-        <hr />
       </div>
     );
   };
@@ -88,12 +85,9 @@ export default function PriceBreakdown({ sections, totalPrice }) {
       </div>
       <div className="card-body px-3 px-sm-4">
         {sortedSections.map(renderSection).filter(Boolean)}
-
-        <div className="d-flex justify-content-between align-items-center mt-3">
-          <div className="fw-bold">총 예상 비용</div>
-          <div className="fw-bold" style={{ fontSize: 20 }}>
-            {formatWon(totalPrice || 0)}
-          </div>
+        <div class="mt-3 mt-sm-4 d-flex justify-content-between align-items-center">
+          <div class="fw-bold fs-5">총 예상 비용</div>
+          <div class="fw-bold fs-5 text-primary">{formatWon(totalPrice || 0)}</div>
         </div>
       </div>
     </div>

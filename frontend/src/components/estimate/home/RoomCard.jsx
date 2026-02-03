@@ -110,9 +110,9 @@ export default function RoomCard({
           </div>
         ) : (
           <div
-            className="position-relative d-flex justify-content-center h-auto bg-light rounded-3"
+            className="position-relative d-flex justify-content-center h-auto bg-light rounded-2"
           >
-            <div className="img_wrap border rounded-2 overflow-hidden w-100 h-auto">
+            <div className="img_wrap border overflow-hidden w-100 h-auto" style={{ maxWidth: "300px" }}>
               <img className="w-100"
                 src={previewUrl}
               />

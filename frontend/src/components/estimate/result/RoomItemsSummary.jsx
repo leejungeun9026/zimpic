@@ -76,14 +76,14 @@ export default function RoomItemsSummary({
                                 </div>
                                 {(hasDisassembly || isSpecial) &&
                                   (
-                                    <ul className="opacity-50" style={{ listStyle: "disc", paddingLeft: "30px" }}>
+                                    <ul className="opacity-50 ps-3">
                                       {hasDisassembly && (
                                         <li>
-                                          분해/조립 필요
+                                          &middot; 분해/조립 필요
                                         </li>
                                       )}
                                       {isSpecial ? (
-                                        <li>특수가구 비용 추가</li>
+                                        <li>&middot; 특수가구 비용 추가</li>
                                       ) : null}
                                     </ul>
                                   )
@@ -104,11 +104,13 @@ export default function RoomItemsSummary({
             <p className="small text-muted">{boxesDescription}</p>
           </div>
         </div>
-        <div className="pt-3 pt-sm-4 mt-3 mt-sm-4 border-top d-flex justify-content-between align-items-center  mb-3">
-          <div className="fw-bold fs-5">예상 이사 차량</div>
-          <div className="fw-bold fs-5">{vehicleText}</div>
+        <div className="pt-3 pt-sm-4 mt-3 mt-sm-4 border-top">
+          <TruckLoad3D result={result} />
+          <div className="pt-3 pt-md-4 d-flex justify-content-between align-items-center">
+            <div className="fw-bold fs-5">예상 이사 차량</div>
+            <div className="fw-bold fs-5 text-primary">{vehicleText}</div>
+          </div>
         </div>
-        <TruckLoad3D result={result} />
       </div>
 
     </div>

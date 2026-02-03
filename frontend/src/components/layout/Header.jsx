@@ -49,7 +49,7 @@ function Header() {
               견적 계산해보기
             </NavLink>
             <NavLink to="" className="header-navlink btn btn-link p-0 text-decoration-none text-dark small fw-semibold">
-              내 주변 이사업체 찾기
+              주변 이사업체 찾기
             </NavLink>
           </div>
         </div>

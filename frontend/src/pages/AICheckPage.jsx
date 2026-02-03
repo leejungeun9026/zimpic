@@ -111,15 +111,17 @@ export default function AICheckPage() {
   if (roomsWithImages.length === 0) {
     return (
       <div className="container-fluid py-4">
-        <div className="card shadow-sm p-4">
-          <StepIndicator currentStep={2} />
-          <p className="text-muted mb-0">
-            업로드된 이미지가 없습니다. Home에서 이미지를 먼저 등록해주세요.
-          </p>
-          <div className="mt-3">
-            <button className="btn btn-primary" onClick={() => navigate("/HomePage")}>
-              Home으로
-            </button>
+        <div className="page_card">
+          <div className="card-body text-center">
+            <StepIndicator currentStep={2} />
+            <p className="text-muted small">
+              업로드된 이미지가 없습니다. Step1에서 이미지를 먼저 등록해주세요.
+            </p>
+            <div className="my-3">
+              <button className="btn btn-primary" onClick={() => navigate("/HomePage")}>
+                처음으로
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -128,8 +130,8 @@ export default function AICheckPage() {
 
   return (
     <div className="container-fluid py-4">
-      <div className="card shadow-sm border-secondary rounded-4 border-opacity-10">
-        <div className="card-body px-3 px-sm-4">
+      <div className="page_card">
+        <div className="card-body">
           <StepIndicator currentStep={2} />
 
           <article className="title mb-4">
