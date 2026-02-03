@@ -28,9 +28,9 @@ export default function InfoPopover({
       container: btnRef.current.parentElement,
       sanitize: false,
       template: `
-        <div class="popover" role="tooltip" style="pointer-events:auto; z-index:"99999"">
-          <div class="popover-arrow"></div>
-          <div class="popover-body"></div>
+        <div className="popover" role="tooltip" style="pointer-events:auto; z-index:"99999"">
+          <div className="popover-arrow"></div>
+          <div className="popover-body"></div>
         </div>
       `,
     });

@@ -7,7 +7,7 @@ const CTASection = () => {
 
   return (
     <section id="main-cta" className="main-section">
-      <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark opacity-50 z-1"></div>
+      <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark opacity-50 z-1"></div>
       <video
         className="position-absolute top-0 start-0 w-100 h-100 object-fit-cover"
         muted

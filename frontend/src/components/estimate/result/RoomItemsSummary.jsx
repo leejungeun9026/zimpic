@@ -13,7 +13,7 @@ export default function RoomItemsSummary({
   return (
     <div className="card rounded-3 border-secondary border-opacity-25">
       <div className="card-header p-3 p-sm-4 pb-0 pb-sm-0 bg-transparent border-0">
-        <h5 class="fw-bold" style={{ fontSize: "18px" }}>이삿짐 정보</h5>
+        <h5 className="fw-bold" style={{ fontSize: "18px" }}>이삿짐 정보</h5>
       </div>
       <div className="card-body p-3 p-sm-4">
         <div className="row gy-4">

@@ -178,7 +178,7 @@ export default function AICheckPage() {
 
           <section>
             <div className="alert alert-warning rounded-3">
-              <div class="fw-semibold mb-2">참고사항</div>
+              <div className="fw-semibold mb-2">참고사항</div>
               <ul className="mb-0 small text-muted ps-3" style={{ listStyleType: "disc" }}>
                 <li>AI 분석 결과는 업로드된 대표 이미지 기준으로 산출됩니다.</li>
                 <li>사진에 보이지 않는 짐은 직접 추가해 주세요.</li>
