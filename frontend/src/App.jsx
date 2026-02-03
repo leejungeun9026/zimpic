@@ -8,9 +8,14 @@ import AddressPage from "./pages/AddressPage";
 import ResultPage from "./pages/ResultPage";
 import MainPage from "./pages/MainPage";
 import LayoutWithWrapper from "./components/layout/LayoutWithWrapper";
+import { useEffect } from "react";
+import { useEstimateStore } from "./store/estimateStore";
 
 
 function App() {
+  useEffect(() => {
+    useEstimateStore.getState().hydrateRoomImages?.();
+  }, []);
   return (
     <div className="d-flex flex-column min-vh-100">
       <Header />

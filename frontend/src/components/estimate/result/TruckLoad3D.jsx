@@ -517,7 +517,7 @@ function TruckGroup({ tw, startY, freeze }) {
 
 /* 메인 */
 const TruckLoad3D = forwardRef(function TruckLoad3D(
-  { result, freeze = false },
+  { result, freeze = false, onReady },
   ref
 ) {
   const controlsRef = useRef();
@@ -693,6 +693,10 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
           camera={{ fov: 40, near: 0.5, far: 4000, position: [30, 20, 30] }}
           dpr={[1, 2]}
           style={{ width: "100%", height: "100%", display: "block" }}
+          onCreated={() => {
+            // 첫 프레임 그릴 준비가 됐다는 신호(컨텍스트/캔버스 생성 완료)
+            onReady?.();
+          }}
         >
         <CameraPreset controlsRef={controlsRef} target={cameraTarget} offset={[2.4, 3.2, 8.5]} onceKey={`${result?.estimate_id ?? "x"}-${trucks.length}-v3-noOverlap`} />
 

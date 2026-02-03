@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { useEstimateStore } from "../../../store/estimateStore";
 import TruckLoad3D from "./TruckLoad3D";
 
@@ -11,6 +12,35 @@ export default function RoomItemsSummary({
   captureMode,
 }) {
   const result = useEstimateStore((s) => s.result);
+  
+  // 3D 영역이 화면에 들어왔는지 감지
+  const threeWrapRef = useRef(null);
+  const [inView, setInView] = useState(false);
+
+  // 다시 내려오면 다시 시작(리마운트)용
+  const [replayKey, setReplayKey] = useState(0);
+
+  useEffect(() => {
+    const el = threeWrapRef.current;
+    if (!el) return;
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        const visible = entry.isIntersecting && entry.intersectionRatio >= 0.25;
+        setInView(visible);
+
+        // “보이기 시작하는 순간”마다 다시 시작하고 싶으면 이 줄 유지
+        if (visible) setReplayKey((k) => k + 1);
+      },
+      {
+        threshold: [0, 0.25, 0.5, 1],
+        rootMargin: "0px 0px -10% 0px",
+      }
+    );
+
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   return (
     <div className="card rounded-3 border-secondary border-opacity-25">
@@ -107,15 +137,47 @@ export default function RoomItemsSummary({
           </div>
         </div>
         <div className="pt-3 pt-sm-4 mt-3 mt-sm-4 border-top">
-          {captureMode?.snapshotUrl ? (
-            <img
-              src={captureMode.snapshotUrl}
-              alt="3D 적재 스냅샷"
-              style={{ width: "100%", height: 320, objectFit: "cover", borderRadius: 12, display: "block" }}
-            />
-          ) : (
-            <TruckLoad3D ref={truck3dRef} result={result} freeze={captureMode?.freeze} />
-          )}
+          {/* 3D 영역 감지용 래퍼 */}
+          <div ref={threeWrapRef}>
+            {captureMode?.snapshotUrl ? (
+              <img
+                src={captureMode.snapshotUrl}
+                alt="3D 적재 스냅샷"
+                style={{
+                  width: "100%",
+                  height: 320,
+                  objectFit: "cover",
+                  borderRadius: 12,
+                  display: "block",
+                }}
+              />
+            ) : inView ? (
+              <TruckLoad3D
+                key={replayKey}          // 다시 내려오면 다시 시작
+                ref={truck3dRef}
+                result={result}
+                freeze={captureMode?.freeze}
+              />
+            ) : (
+              // 화면 밖일 때는 자리만 잡아두기(레이아웃 안 흔들리게)
+              <div
+                style={{
+                  width: "100%",
+                  height: 320,
+                  borderRadius: 12,
+                  background: "#E9EEF5",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#6c757d",
+                  fontSize: 14,
+                }}
+              >
+                3D 적재 시뮬레이션(스크롤 시 재생)
+              </div>
+            )}
+          </div>
+
           <div className="pt-3 pt-md-4 d-flex justify-content-between align-items-center">
             <div className="fw-bold fs-5">예상 이사 차량</div>
             <div className="fw-bold fs-5 text-primary">{vehicleText}</div>
