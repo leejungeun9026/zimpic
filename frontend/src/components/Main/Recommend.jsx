@@ -3,7 +3,7 @@ import { ShieldCheck, CircleDollarSign, CheckCircle2, Check } from "lucide-react
 
 const Recommend = () => {
   return (
-    <section id="main-features" className="main-section">
+    <section id="main-recommend" className="main-section">
       <div className="container main-inner">
         <div className="title pb-4 text-center">
           <h2 className="fs-2 fw-bold pb-2">이런 분들에게 추천드려요</h2>

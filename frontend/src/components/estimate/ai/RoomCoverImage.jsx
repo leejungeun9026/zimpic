@@ -81,7 +81,7 @@ export default function RoomCoverImage({ coverUrl, loading, detectedItems = [], 
             alt="preview"
             onLoad={recalc}
             className="w-100 d-block"
-            style={{ maxWidth: "300px" }}
+            style={{ maxWidth: "480px" }}
           />
 
           {/* Bounding boxes overlay */}
