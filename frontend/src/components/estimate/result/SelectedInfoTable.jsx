@@ -30,7 +30,7 @@ export default function SelectedInfoTable({
   return (
     <div className="card rounded-3 border-secondary border-opacity-25">
       <div className="card-header p-3 p-sm-4 pb-0 pb-sm-0 bg-transparent border-0">
-        <h5 class="fw-bold" style={{ fontSize: "18px" }}>선택 정보</h5>
+        <h5 className="fw-bold" style={{ fontSize: "18px" }}>선택 정보</h5>
       </div>
       <div className="card-body px-3 px-sm-4">
         <ul>

@@ -85,9 +85,9 @@ export default function AddressPage() {
         <div className="card-body">
           <StepIndicator currentStep={3} />
 
-          <article class="title mb-4">
-            <h2 class="fw-bold mb-2">주소 입력</h2>
-            <p class="text-muted small">출발지와 도착지 정보를 입력해 주세요.</p>
+          <article className="title mb-4">
+            <h2 className="fw-bold mb-2">주소 입력</h2>
+            <p className="text-muted small">출발지와 도착지 정보를 입력해 주세요.</p>
           </article>
 
           <section className="mb-4">

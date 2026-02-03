@@ -81,13 +81,13 @@ export default function PriceBreakdown({ sections, totalPrice }) {
   return (
     <div className="card rounded-3 border-secondary border-opacity-25">
       <div className="card-header p-3 p-sm-4 pb-0 pb-sm-0 bg-transparent border-0">
-        <h5 class="fw-bold" style={{ fontSize: "18px" }}>견적 세부 내역</h5>
+        <h5 className="fw-bold" style={{ fontSize: "18px" }}>견적 세부 내역</h5>
       </div>
       <div className="card-body px-3 px-sm-4">
         {sortedSections.map(renderSection).filter(Boolean)}
-        <div class="mt-3 mt-sm-4 d-flex justify-content-between align-items-center">
-          <div class="fw-bold fs-5">총 예상 비용</div>
-          <div class="fw-bold fs-5 text-primary">{formatWon(totalPrice || 0)}</div>
+        <div className="mt-3 mt-sm-4 d-flex justify-content-between align-items-center">
+          <div className="fw-bold fs-5">총 예상 비용</div>
+          <div className="fw-bold fs-5 text-primary">{formatWon(totalPrice || 0)}</div>
         </div>
       </div>
     </div>
