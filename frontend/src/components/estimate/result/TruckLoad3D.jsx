@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect, useCallback } from "react";
+import React, { useMemo, useRef, useEffect, useCallback, forwardRef, useImperativeHandle,} from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Html, Sky, ContactShadows, Environment } from "@react-three/drei";
 // logic 분리된 것들
@@ -299,7 +299,7 @@ function CameraPreset({ controlsRef, target, offset = [2.4, 3.2, 8.5], onceKey }
   return null;
 }
 
-function FallingBox({ p, startY, delaySec, durationSec = 0.6, zOffsetCm = 0, yOffsetCm = 0, xOffsetCm = 0, worldOffset, onLand }) {
+function FallingBox({ p, startY, delaySec, durationSec = 0.6, zOffsetCm = 0, yOffsetCm = 0, xOffsetCm = 0, worldOffset, onLand, freeze }) {
   const meshRef = useRef();
   const tRef = useRef(0);
   const doneRef = useRef(false);
@@ -329,6 +329,7 @@ function FallingBox({ p, startY, delaySec, durationSec = 0.6, zOffsetCm = 0, yOf
   }, [p.pos.x, p.pos.z, startY, zOffsetCm, xOffsetCm, worldOffset.x, worldOffset.z]);
 
   useFrame((_, delta) => {
+    if (freeze) return;
     if (!meshRef.current) return;
     if (doneRef.current) return;
 
@@ -409,7 +410,7 @@ function FallingBox({ p, startY, delaySec, durationSec = 0.6, zOffsetCm = 0, yOf
   );
 }
 
-function TruckGroup({ tw, startY }) {
+function TruckGroup({ tw, startY, freeze }) {
   const tr = tw.truck;
   const preset = tw.preset;
   const CAB_D = preset.cabD;
@@ -430,6 +431,7 @@ function TruckGroup({ tw, startY }) {
   }, []);
 
   useFrame((_, delta) => {
+    if (freeze) return;
     if (!groupRef.current) return;
 
     const k = 120;
@@ -490,7 +492,7 @@ function TruckGroup({ tw, startY }) {
         >
           <span style={{ opacity: 0.75 }}>{preset.label}</span>
           <span>적재율 {pct}%</span>
-          {tw.overflowCount > 0 && <span style={{ opacity: 0.9 }}>⚠ 못실음 {tw.overflowCount}</span>}
+          {tw.overflowCount > 0 && <span style={{ opacity: 0.9 }}>⚠ 미적재 : {tw.overflowCount}</span>}
         </div>
       </Html>
 
@@ -506,6 +508,7 @@ function TruckGroup({ tw, startY }) {
           xOffsetCm={preset.bodyPaddingW / 2}
           worldOffset={{ x: 0, z: 0 }}
           onLand={handleLand}
+          freeze={freeze}
         />
       ))}
     </group>
@@ -513,10 +516,26 @@ function TruckGroup({ tw, startY }) {
 }
 
 /* 메인 */
-export default function TruckLoad3D({ result }) {
+const TruckLoad3D = forwardRef(function TruckLoad3D(
+  { result, freeze = false },
+  ref
+) {
   const controlsRef = useRef();
+  const wrapRef = useRef(null);
 
-  /* ✅ 서버에서 준 트럭 플랜(result.summary.truck_plan)으로 트럭 구성 */
+  useImperativeHandle(ref, () => ({
+    capture: () => {
+      const canvas = wrapRef.current?.querySelector("canvas");
+      if (!canvas) return null;
+      try {
+        return canvas.toDataURL("image/png");
+      } catch {
+        return null;
+      }
+    },
+  }));
+
+  /* 서버에서 준 트럭 플랜(result.summary.truck_plan)으로 트럭 구성 */
   const trucks = useMemo(() => {
     const plan = result?.summary?.truck_plan ?? [];
     const expanded = [];
@@ -532,12 +551,12 @@ export default function TruckLoad3D({ result }) {
           type,
           preset,
 
-          // ✅ 서버 치수
+          // 서버 치수
           w: Number(t?.inner_w_cm ?? 230),
           d: Number(t?.inner_d_cm ?? 620),
           h: Number(t?.inner_h_cm ?? 230),
 
-          // ✅ 서버가 준 적재/용량 정보(표시용)
+          // 서버가 준 적재/용량 정보(표시용)
           loadCbm: Number(t?.load_cbm ?? 0),
           capacityCbm: Number(t?.capacity_cbm ?? 0),
           loadPct: Number(t?.load_factor_pct ?? 0),
@@ -552,7 +571,7 @@ export default function TruckLoad3D({ result }) {
 
   const maxTruckH = useMemo(() => Math.max(...trucks.map((t) => t.h)), [trucks]);
 
-  /* ✅ 서버에서 준 짐 리스트(result.rooms[].items[]) + 박스(result.summary.box/boxes_count) */
+  /* 서버에서 준 짐 리스트(result.rooms[].items[]) + 박스(result.summary.box/boxes_count) */
   const items = useMemo(() => {
     const roomItems = (result?.rooms ?? []).flatMap((r) => r.items ?? []);
     const boxSpec = result?.summary?.box;
@@ -583,7 +602,7 @@ export default function TruckLoad3D({ result }) {
 
     let overflowTotal = remainder.length;
 
-    // ✅ 동시에 와다다 + 약간 지터
+    // 동시에 와다다 + 약간 지터
     const JITTER_SEC = 0.12;
     const withJitter = (arr, keyPrefix) =>
       arr.map((p, idx) => ({ ...p, _delayJitter: hash01(`${keyPrefix}-${p.id}-${idx}`) * JITTER_SEC }));
@@ -594,7 +613,7 @@ export default function TruckLoad3D({ result }) {
 
       const worldOffset = { x: (i - (trucks.length - 1) / 2) * GAP_TRUCK, z: 0 };
 
-      /* ✅ 여기서 "실제 3D 적재" 계산:
+      /* 여기서 "실제 3D 적재" 계산:
          - bin-packing-3d 여러 번 시도
          - 결과를 겹침 0으로 정리(겹치면 주변 탐색 -> 그래도 안되면 미적재 처리)
       */
@@ -653,19 +672,28 @@ export default function TruckLoad3D({ result }) {
     return { trucks: out, overflowTotal, globalRemainderPlacements };
   }, [items, trucks]);
 
-  // 네가 원한 “초기 카메라 시점”
+  // “초기 카메라 시점”
   const cameraTarget = useMemo(() => [-3, 1.2, 1.4], []);
   const startY = useMemo(() => maxTruckH + 10 + 220, [maxTruckH]);
 
   return (
-    <div style={{ width: "100%", aspectRatio: "16 / 9", maxHeight: 320, minHeight: 220, borderRadius: 12, overflow: "hidden", background: "#81d4fa", position: "relative" }}>
+    <div
+      ref={wrapRef}
+      style={{ width: "100%", aspectRatio: "16 / 9", maxHeight: 320, minHeight: 220, borderRadius: 12, overflow: "hidden", background: "#81d4fa", position: "relative" }}
+    >
       {scene.overflowTotal > 0 && (
         <div style={{ position: "absolute", top: 10, left: 10, zIndex: 2, background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: "6px 10px", fontSize: 12, fontWeight: 900, color: "#d32f2f", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
           ⚠️ 트럭에 못 실은 짐(빨간색): {scene.overflowTotal}개
         </div>
       )}
 
-      <Canvas shadows camera={{ fov: 40, near: 0.5, far: 4000, position: [30, 20, 30] }} dpr={[1, 2]} style={{ width: "100%", height: "100%", display: "block" }}>
+        <Canvas
+          shadows
+          gl={{ preserveDrawingBuffer: true }}
+          camera={{ fov: 40, near: 0.5, far: 4000, position: [30, 20, 30] }}
+          dpr={[1, 2]}
+          style={{ width: "100%", height: "100%", display: "block" }}
+        >
         <CameraPreset controlsRef={controlsRef} target={cameraTarget} offset={[2.4, 3.2, 8.5]} onceKey={`${result?.estimate_id ?? "x"}-${trucks.length}-v3-noOverlap`} />
 
         <Sky sunPosition={[100, 50, 50]} turbidity={0.2} rayleigh={0.15} />
@@ -678,7 +706,7 @@ export default function TruckLoad3D({ result }) {
         </group>
 
         {scene.trucks.map((tw) => (
-          <TruckGroup key={tw.truck.id} tw={tw} startY={startY} />
+          <TruckGroup key={tw.truck.id} tw={tw} startY={startY} freeze={freeze} />
         ))}
 
         {scene.globalRemainderPlacements.length > 0 && scene.trucks[0] && (() => {
@@ -697,6 +725,7 @@ export default function TruckLoad3D({ result }) {
                   yOffsetCm={preset0.chassisH}
                   xOffsetCm={preset0.bodyPaddingW / 2}
                   worldOffset={{ x: 0, z: 0 }}
+                  freeze={freeze}
                 />
               ))}
             </group>
@@ -708,4 +737,5 @@ export default function TruckLoad3D({ result }) {
       </Canvas>
     </div>
   );
-}
+});
+export default TruckLoad3D;

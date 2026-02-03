@@ -23,6 +23,8 @@ export default function SelectedInfoTable({
   distanceKm,
   ladderText,
   totalSpecialCount,
+  originAddress,
+  destAddress,
 }) {
 
   return (
@@ -37,14 +39,14 @@ export default function SelectedInfoTable({
           <SummaryRow label="출발지 정보"
             value={
               <>
-                출발지 도로명주소 넣기  &middot; {moveInfo.fromFloor || ""}층<br />
+                {originAddress || "주소 정보 없음"} &middot; {moveInfo.fromFloor || ""}층<br />
                 {moveInfo.fromElevator ? "엘리베이터 있음" : "엘리베이터 없음"}
               </>
             } />
           <SummaryRow label="도착지 정보"
             value={
               <>
-                도착지 도로명주소 넣기  &middot; {moveInfo.toFloor || ""}층<br />
+                {destAddress || (moveInfo?.toUnknown ? "도착지 미정" : "주소 정보 없음")} &middot; {moveInfo.toFloor || ""}층<br />
                 {moveInfo.toElevator ? "엘리베이터 있음" : "엘리베이터 없음"}
               </>
             } />

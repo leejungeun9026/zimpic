@@ -7,6 +7,8 @@ export default function RoomItemsSummary({
   vehicleText,
   specialFurnitureIdSet,
   boxesDescription,
+  truck3dRef,
+  captureMode,
 }) {
   const result = useEstimateStore((s) => s.result);
 
@@ -105,7 +107,15 @@ export default function RoomItemsSummary({
           </div>
         </div>
         <div className="pt-3 pt-sm-4 mt-3 mt-sm-4 border-top">
-          <TruckLoad3D result={result} />
+          {captureMode?.snapshotUrl ? (
+            <img
+              src={captureMode.snapshotUrl}
+              alt="3D 적재 스냅샷"
+              style={{ width: "100%", height: 320, objectFit: "cover", borderRadius: 12, display: "block" }}
+            />
+          ) : (
+            <TruckLoad3D ref={truck3dRef} result={result} freeze={captureMode?.freeze} />
+          )}
           <div className="pt-3 pt-md-4 d-flex justify-content-between align-items-center">
             <div className="fw-bold fs-5">예상 이사 차량</div>
             <div className="fw-bold fs-5 text-primary">{vehicleText}</div>

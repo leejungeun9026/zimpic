@@ -2,16 +2,13 @@
 import { useNavigate } from "react-router-dom";
 import StepIndicator from "../components/layout/StepIndicator";
 import { useEstimateStore } from "../store/estimateStore";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import ResultSummaryBox from "../components/estimate/result/ResultSummaryBox";
 import SelectedInfoTable from "../components/estimate/result/SelectedInfoTable";
 import RoomItemsSummary from "../components/estimate/result/RoomItemsSummary";
 import PriceBreakdown from "../components/estimate/result/PriceBreakdown";
 import ResultFooterActions from "../components/estimate/result/ResultFooterActions";
-
-// 3D 카드
-import TruckLoad3D from "../components/estimate/result/TruckLoad3D";
 
 // pdf 로직
 import html2canvas from "html2canvas";
@@ -30,8 +27,15 @@ export default function ResultPage() {
   const handlePrev = () => navigate("/AddressPage");
   const pdfRef = useRef(null);
 
+  // 3d 이미지 저장
+  const truck3dRef = useRef(null);
+  const [captureMode, setCaptureMode] = useState({ freeze: false, snapshotUrl: null });
+
   // 요약정보 
   const summary = result?.summary ?? null;
+  // 출발지 도착지 주소
+  const originAddress = summary?.origin_address ?? "";
+  const destAddress = summary?.dest_address ?? "";
   //실제 금액 계산의 근거
   const pricing = result?.pricing ?? null;
 
@@ -129,8 +133,6 @@ export default function ResultPage() {
 
 
   const roomSummaries = useMemo(() => {
-    const boxesCount = Number(summary?.boxes_count ?? 0);
-    const boxSpec = summary?.box;
 
     return rooms.map((room) => {
       const items = (analysisByRoom?.[room.id] ?? []).filter((i) => i.checked);
@@ -162,28 +164,7 @@ export default function ResultPage() {
         grouped[key].count += i.count ?? 1;
       });
 
-      // ✅ 박스는 한 번만(첫 방에) 추가
-      if (room.sortOrder === 0 || room.id === rooms[0]?.id) {
-        if (boxesCount > 0 && boxSpec) {
-          const bw = Number(boxSpec.packed_w_cm ?? boxSpec.w_cm ?? 0);
-          const bd = Number(boxSpec.packed_d_cm ?? boxSpec.d_cm ?? 0);
-          const bh = Number(boxSpec.packed_h_cm ?? boxSpec.h_cm ?? 0);
-
-          const boxKey = `이사 박스(5호)|${bw}x${bh}x${bd}|dis:0|fid:${boxSpec.furniture_id}`;
-
-          grouped[boxKey] = {
-            key: boxKey,
-            name: boxSpec.name_kr ?? "이사 박스",
-            count: boxesCount,
-            width: bw,
-            height: bh,
-            depth: bd,
-            needsDisassembly: false,
-            furnitureId: boxSpec.furniture_id,
-            isBox: true,
-          };
-        }
-      }
+      
 
       // 전체 짐 개수
       const totalCount = Object.values(grouped).reduce(
@@ -246,6 +227,19 @@ export default function ResultPage() {
   const handleSavePdf = async () => {
     if (!pdfRef.current) return;
 
+    // freeze on
+    setCaptureMode({ freeze: true, snapshotUrl: null });
+    await new Promise((r) => requestAnimationFrame(r));
+
+    // capture
+    const snap = truck3dRef.current?.capture?.() ?? null;
+
+    // swap to img
+    setCaptureMode({ freeze: true, snapshotUrl: snap });
+    await new Promise((r) => requestAnimationFrame(r));
+    await new Promise((r) => requestAnimationFrame(r));
+
+    // html2canvas
     const canvas = await html2canvas(pdfRef.current, {
       scale: 2,
       backgroundColor: "#ffffff",
@@ -275,6 +269,9 @@ export default function ResultPage() {
     }
 
     pdf.save("이사_견적서.pdf");
+
+    // restore
+    setCaptureMode({ freeze: false, snapshotUrl: null });
   };
 
   return (
@@ -305,6 +302,8 @@ export default function ResultPage() {
                 distanceKm={distanceKm}
                 ladderText={ladderText}
                 totalSpecialCount={totalSpecialCount}
+                originAddress={originAddress}
+                destAddress={destAddress}
                 totalItemCount={totalItemCount}
                 specialLines={specialLines}
                 disassemblyNames={disassemblyNames}
@@ -320,6 +319,8 @@ export default function ResultPage() {
                 vehicleText={vehicleText}
                 specialFurnitureIdSet={specialFurnitureIdSet}
                 boxesDescription={summary?.boxes_description}
+                truck3dRef={truck3dRef}
+                captureMode={captureMode}
               />
             </section>
 

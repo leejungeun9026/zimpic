@@ -1,3 +1,12 @@
+import { useMemo } from "react";
+
+const CATEGORY_LABEL_KR = {
+  GENERAL_APPLIANCE: "생활가전",
+  KITCHEN_APPLIANCE: "주방가전",
+  GENERAL_FURNITURE: "일반가구",
+  SPECIAL_FURNITURE: "특수가구",
+};
+
 export default function ExtraItemAdder({
   loading,
   options,
@@ -5,6 +14,16 @@ export default function ExtraItemAdder({
   onChange,
   onAdd,
 }) {
+
+  const grouped = useMemo(() => {
+    return (options ?? []).reduce((acc, opt) => {
+      const catCode = opt.category ?? "ETC";
+      const catLabel = CATEGORY_LABEL_KR[catCode] ?? catCode;
+      (acc[catLabel] ||= []).push(opt);
+      return acc;
+    }, {});
+  }, [options]);
+
   return (
     <div className="d-flex align-items-center flex-wrap gap-2 mt-3">
       <div className="text-nowrap">
@@ -18,10 +37,14 @@ export default function ExtraItemAdder({
           onChange={(e) => onChange(Number(e.target.value))}
           disabled={loading}
         >
-          {options.map((opt) => (
-            <option key={opt.id} value={opt.id}>
-              {opt.name_kr}
-            </option>
+          {Object.entries(grouped).map(([cat, items]) => (
+            <optgroup key={cat} label={cat}>
+              {items.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.name_kr}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
         <button
