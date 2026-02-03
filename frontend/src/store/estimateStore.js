@@ -401,7 +401,7 @@ export const useEstimateStore = create(
           };
         }),
 
-      /* ---------- 수동 삭제 ---------- */
+/* ---------- 수동 삭제 ---------- */
       removeManualItem: (roomId, itemId) =>
         set((state) => {
           const list = state.analysisByRoom?.[roomId] ?? [];
@@ -504,14 +504,15 @@ export const useEstimateStore = create(
         set(initialState);
       },
 
-      /* “처음으로” 같은 버튼에서 localStorage까지 싹 비우고 싶을 때 */
+      /* “처음으로” 같은 버튼에서 persist storage까지 싹 비우고 싶을 때 */
       clearPersist: () => {
-        localStorage.removeItem("estimate-store"); // persist name과 동일해야 함
+        sessionStorage.removeItem("estimate-store"); // persist name과 동일해야 함
       },
     }),
     {
       name: "estimate-store",
-      storage: createJSONStorage(() => localStorage),
+
+      storage: createJSONStorage(() => sessionStorage),
 
       // 제일 중요: rooms.images.file은 저장하지 말고 "있다/없다"만 저장
       partialize: (state) => ({
