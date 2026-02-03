@@ -6,7 +6,7 @@
 }
 
 .main-section {
-  padding: 80px 0;
+  padding: 100px 0;
 }
 
 .main-inner {
@@ -55,23 +55,123 @@
   position: relative;
   overflow: hidden;
   color: white;
-  height: 60vh;
+  height: 70vh;
 }
 
-#main-hero::before {
-  content: "";
-  z-index: 0;
-  width: 100%;
-  height: 100%;
+#main-hero .hero-bg {
   position: absolute;
   inset: 0;
+  z-index: 0;
   background:
     linear-gradient(180deg, rgba(2, 6, 23, 0.75), rgba(2, 6, 23, 0.65)),
     url("/mv_image.jpg");
   background-size: cover;
-  background-position: center;
-  transform: scale(1.04);
+  background-position: center bottom;
+  transform: scale(1.02);
+  will-change: transform;
 }
+
+
+
+/* ---------- steps-stimulator ---------- */
+
+#simulator {
+  height: 600px;
+}
+
+/* simulator */
+.simulator_wrap {
+  width: 50%;
+  max-width: 420px;
+  position: absolute;
+  right: calc((100vw - 720px)/2);
+  top: 20%;
+  padding: 0 16px;
+}
+
+.simulator_swiper .swiper-slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+
+/* thumb */
+.thumb_wrap {
+  width: 50%;
+  max-width: 420px;
+  position: absolute;
+  left: calc((100% - 720px)/2);
+  top: 20%;
+}
+
+.simulator_thumb_swiper .swiper-wrapper {
+  width: fit-content;
+  flex-direction: column;
+  gap: 16px;
+  cursor: default;
+}
+
+.simulator_thumb_swiper .swiper-slide {
+  width: 100% !important;
+  height: 100%;
+  opacity: 0.4;
+}
+
+.simulator_thumb_swiper .swiper-slide-thumb-active {
+  opacity: 1;
+}
+
+.step_box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: start;
+  gap: 8px;
+}
+
+.step_box .num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 50px;
+}
+
+
+@media (max-width: 767.98px) {
+  #simulator {
+    height: 740px;
+  }
+
+  .simulator_wrap {
+    width: 100%;
+    max-width: 420px;
+    right: 0;
+    left: 50%;
+    top: 50%;
+    transform: translateX(-50%);
+  }
+
+  .thumb_wrap {
+    width: 100%;
+    max-width: fit-content;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 80px;
+  }
+
+  .simulator_thumb_swiper .swiper-wrapper {
+    margin: 0 auto;
+    gap: 8px;
+  }
+}
+
 
 
 /* ---------- CTA ---------- */

@@ -3,14 +3,18 @@ import { useEstimateStore } from "../../store/estimateStore";
 
 
 function Header() {
-
   const navigate = useNavigate();
   const reset = useEstimateStore((s) => s.reset);
 
   const handleLogoClick = (e) => {
     e.preventDefault(); // NavLink 기본 이동 막고
     reset();            // 견적 상태 초기화
-    navigate("/");      // 홈으로 이동
+
+    if (window.location.pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    navigate("/");
   };
 
   return (

@@ -19,13 +19,12 @@ export default function RoomsSection({
       {(rooms ?? []).map((room) => {
         const firstImageId = room.images?.[0]?.id;
         const previewUrl = firstImageId
-          ? previewMap.get(firstImageId)
-          : "";
+          ? (previewMap.get(firstImageId) ?? null)
+          : null;
 
         return (
-          <div className="col-12">
+          <div className="col-12" key={room.id}>
             <RoomCard
-              key={room.id}
               room={room}
               rooms={rooms}
               spaceOptions={spaceOptions}

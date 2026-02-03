@@ -43,7 +43,20 @@ export default function HomePage() {
     const map = new Map();
     (rooms ?? []).forEach((room) => {
       (room.images ?? []).forEach((img) => {
-        map.set(img.id, URL.createObjectURL(img.file));
+        // 1) File/Blob이면 createObjectURL
+        if (img?.file instanceof Blob) {
+          map.set(img.id, URL.createObjectURL(img.file));
+          return;
+        }
+
+        // 2) 이미 url이 있으면 그걸 사용 (서버 이미지 등)
+        if (typeof img?.url === "string") {
+          map.set(img.id, img.url);
+          return;
+        }
+
+        // 3) 그 외는 그냥 스킵 (잘못된 데이터)
+        // console.warn("Invalid image object:", img);
       });
     });
     return map;
@@ -52,7 +65,11 @@ export default function HomePage() {
   // cleanup
   useEffect(() => {
     return () => {
-      previewMap.forEach((url) => URL.revokeObjectURL(url));
+      previewMap.forEach((url) => {
+        if (typeof url === "string" && url.startsWith("blob:")) {
+          URL.revokeObjectURL(url);
+        }
+      });
     };
   }, [previewMap]);
 

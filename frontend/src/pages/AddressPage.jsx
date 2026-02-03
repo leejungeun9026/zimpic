@@ -137,16 +137,15 @@ export default function AddressPage() {
               addressValue={moveInfo.fromAddress}
               addressDisabled={loading}
               onFindAddress={() => openPostcode("from")}
-              // ✅ 주소 입력 바로 밑에 wrap 삽입
               addressBelow={
                 <div
                   ref={fromWrapRef}
                   style={{
                     display: "none",
-                    border: "1px solid",
-                    width: 500,
-                    height: 300,
-                    margin: "5px 0",
+                    border: "1px solid #dee2e6",
+                    width: "100%",
+                    height: 320,
+                    marginTop: -38,
                     position: "relative",
                   }}
                 >
@@ -197,16 +196,15 @@ export default function AddressPage() {
               addressValue={moveInfo.toAddress}
               addressDisabled={isDestinationUnknown || loading}
               onFindAddress={() => openPostcode("to")}
-              // ✅ 주소 입력 바로 밑에 wrap 삽입
               addressBelow={
                 <div
                   ref={toWrapRef}
                   style={{
                     display: "none",
-                    border: "1px solid",
-                    width: 500,
-                    height: 300,
-                    margin: "5px 0",
+                    border: "1px solid #dee2e6",
+                    width: "100%",
+                    height: 320,
+                    marginTop: -38,
                     position: "relative",
                   }}
                 >

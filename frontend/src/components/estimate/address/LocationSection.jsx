@@ -9,7 +9,7 @@ export default function LocationSection({
   addressValue,
   addressDisabled,
   onFindAddress,
-  addressBelow, // ✅ 추가
+  addressBelow,
   floorValue,
   onChangeFloor,
   elevatorChecked,
@@ -30,8 +30,8 @@ export default function LocationSection({
           value={addressValue}
           disabled={addressDisabled}
           onFindAddress={onFindAddress}
+          below={addressBelow}
         />
-        {addressBelow}
         <FloorCarryFields
           title={title}
           idPrefix={idPrefix}

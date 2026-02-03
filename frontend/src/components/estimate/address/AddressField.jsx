@@ -2,7 +2,8 @@ export default function AddressField({
   value,
   disabled,
   onFindAddress,
-  title
+  title,
+  below,
 }) {
   return (
     <div className="mb-4">
@@ -30,6 +31,7 @@ export default function AddressField({
           </button>
         </div>
       </div>
+      {below}
     </div>
   );
 }
