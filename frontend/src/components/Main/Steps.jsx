@@ -40,7 +40,7 @@ const Steps = () => {
             <p className="text-secondary pb-3">3단계면 끝나는 간편한 이사 견적</p>
           </div>
 
-          <div ref={ref} className="row row-cols-1 row-cols-md-3 gy-5 gx-3">
+          <div ref={ref} className="row row-cols-1 row-cols-sm-3 gy-5 gx-3">
             <div className="col">
               <div className="step-card card rounded-4 h-100 border-0 overflow-hidden shadow-sm">
                 <img src="/step01.jpg" alt="이용방법1" style={{ width: "100%", height: "auto" }} />
