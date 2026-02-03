@@ -1,8 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import StepIndicator from "../components/layout/StepIndicator";
 import { useEstimateStore } from "../store/estimateStore";
-
 import LocationSection from "../components/estimate/address/LocationSection";
 
 export default function AddressPage() {
@@ -17,6 +16,16 @@ export default function AddressPage() {
   const handlePrev = () => navigate("/AICheckPage");
 
   const isDestinationUnknown = !!moveInfo.toUnknown;
+
+  // ✅ sample3 방식: 출발지/도착지 각각 wrap ref
+  const fromWrapRef = useRef(null);
+  const toWrapRef = useRef(null);
+
+  // ✅ sample3 방식: 접기
+  const foldDaumPostcode = (type) => {
+    const wrap = type === "from" ? fromWrapRef.current : toWrapRef.current;
+    if (wrap) wrap.style.display = "none";
+  };
 
   // 도착지 미정이면 도착지 관련 값 초기화
   useEffect(() => {
@@ -56,28 +65,57 @@ export default function AddressPage() {
     }
   };
 
+  // ✅ sample3 방식으로 변경: open() -> embed(wrap)
   const openPostcode = (type) => {
     if (!window?.daum?.Postcode) {
       alert("주소 검색 스크립트가 로드되지 않았어요.");
       return;
     }
-    // 카카오 우편번호/주소 검색 UI 띄움
+
+    const wrap = type === "from" ? fromWrapRef.current : toWrapRef.current;
+    if (!wrap) return;
+
+    // 현재 scroll 위치 저장 (sample3)
+    const currentScroll = Math.max(
+      document.body.scrollTop,
+      document.documentElement.scrollTop
+    );
+
     new window.daum.Postcode({
       oncomplete: (data) => {
-        const address = (data.roadAddress || data.address || "").trim();
+        // sample3처럼 R/J에 따라 주소 선택
+        const addr =
+          data.userSelectedType === "R" ? data.roadAddress : data.jibunAddress;
 
         if (type === "from") {
-          setMoveInfo({ fromAddress: address });
+          setMoveInfo({ fromAddress: (addr || "").trim() });
         } else {
           setMoveInfo({
             toUnknown: false,
-            toAddress: address,
+            toAddress: (addr || "").trim(),
           });
         }
-      },
-    }).open();
-  };
 
+        // iframe을 넣은 element를 안보이게 한다. (sample3)
+        wrap.style.display = "none";
+
+        // scroll 복원 (sample3)
+        document.body.scrollTop = currentScroll;
+        document.documentElement.scrollTop = currentScroll;
+      },
+
+      // iframe 크기 변경 시 wrap 높이 조절 (sample3)
+      onresize: (size) => {
+        wrap.style.height = size.height + "px";
+      },
+
+      width: "100%",
+      height: "100%",
+    }).embed(wrap);
+
+    // iframe을 넣은 element를 보이게 한다. (sample3)
+    wrap.style.display = "block";
+  };
 
   return (
     <div className="container-fluid py-4">
@@ -99,6 +137,33 @@ export default function AddressPage() {
               addressValue={moveInfo.fromAddress}
               addressDisabled={loading}
               onFindAddress={() => openPostcode("from")}
+              // ✅ 주소 입력 바로 밑에 wrap 삽입
+              addressBelow={
+                <div
+                  ref={fromWrapRef}
+                  style={{
+                    display: "none",
+                    border: "1px solid",
+                    width: 500,
+                    height: 300,
+                    margin: "5px 0",
+                    position: "relative",
+                  }}
+                >
+                  <img
+                    src="//t1.daumcdn.net/postcode/resource/images/close.png"
+                    alt="접기 버튼"
+                    style={{
+                      cursor: "pointer",
+                      position: "absolute",
+                      right: "0px",
+                      top: "-1px",
+                      zIndex: 1,
+                    }}
+                    onClick={() => foldDaumPostcode("from")}
+                  />
+                </div>
+              }
               floorValue={moveInfo.fromFloor}
               onChangeFloor={(v) => setMoveInfo({ fromFloor: v })}
               elevatorChecked={moveInfo.fromElevator}
@@ -132,6 +197,33 @@ export default function AddressPage() {
               addressValue={moveInfo.toAddress}
               addressDisabled={isDestinationUnknown || loading}
               onFindAddress={() => openPostcode("to")}
+              // ✅ 주소 입력 바로 밑에 wrap 삽입
+              addressBelow={
+                <div
+                  ref={toWrapRef}
+                  style={{
+                    display: "none",
+                    border: "1px solid",
+                    width: 500,
+                    height: 300,
+                    margin: "5px 0",
+                    position: "relative",
+                  }}
+                >
+                  <img
+                    src="//t1.daumcdn.net/postcode/resource/images/close.png"
+                    alt="접기 버튼"
+                    style={{
+                      cursor: "pointer",
+                      position: "absolute",
+                      right: "0px",
+                      top: "-1px",
+                      zIndex: 1,
+                    }}
+                    onClick={() => foldDaumPostcode("to")}
+                  />
+                </div>
+              }
               floorValue={moveInfo.toFloor}
               onChangeFloor={(v) => setMoveInfo({ toFloor: v })}
               elevatorChecked={moveInfo.toElevator}
@@ -141,8 +233,6 @@ export default function AddressPage() {
               fieldsDisabled={isDestinationUnknown || loading}
             />
           </section>
-
-
 
           <div className="d-flex justify-content-between mt-4">
             <button

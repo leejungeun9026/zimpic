@@ -1,3 +1,4 @@
+// LocationSection.jsx
 import SectionHeader from "./SectionHeader";
 import AddressField from "./AddressField";
 import FloorCarryFields from "./FloorCarryFields";
@@ -8,6 +9,7 @@ export default function LocationSection({
   addressValue,
   addressDisabled,
   onFindAddress,
+  addressBelow, // ✅ 추가
   floorValue,
   onChangeFloor,
   elevatorChecked,
@@ -29,7 +31,7 @@ export default function LocationSection({
           disabled={addressDisabled}
           onFindAddress={onFindAddress}
         />
-
+        {addressBelow}
         <FloorCarryFields
           title={title}
           idPrefix={idPrefix}
