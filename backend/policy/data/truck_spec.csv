@@ -1,4 +1,4 @@
 truck_type,name,body_type,inner_width_cm,inner_length_cm,inner_height_cm,cbm_geom,is_active
-1T,1톤,CARGO,160,270,160,6,TRUE
+1T,1톤,CARGO,160,270,200,6,TRUE
 2_5T,2.5톤,TOP,190,430,180,14,TRUE
 5T,5톤,TOP,230,620,230,30,TRUE
