@@ -1,7 +1,14 @@
-import React, { useMemo, useRef, useEffect, useCallback, forwardRef, useImperativeHandle,} from "react";
+import React, {
+  useMemo,
+  useRef,
+  useEffect,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Html, Sky, ContactShadows, Environment } from "@react-three/drei";
-// logic 분리된 것들
+
 import { SCALE, TRUCK_PRESET } from "./logic/truckPreset";
 import { toNumber, itemCbm, hash01 } from "./logic/packingUtils";
 import { simplePack, splitItemsByTruckLoad } from "./logic/simplePack";
@@ -236,7 +243,13 @@ function TruckShell({ truck, cabD, chassisH, bodyPaddingW, bodyPaddingD, bodyPad
       <group position={[centerX * SCALE, (chassisH + bedOuterH / 2) * SCALE, bedZ * SCALE]}>
         <mesh castShadow>
           <boxGeometry args={[bedOuterW * SCALE, bedOuterH * SCALE, bedOuterD * SCALE]} />
-          <meshStandardMaterial color="#ecf0f1" transparent opacity={0.15} roughness={0.1} depthWrite={false} />
+          <meshStandardMaterial
+            color="#ecf0f1"
+            transparent
+            opacity={0.15}
+            roughness={0.1}
+            depthWrite={false}
+          />
         </mesh>
         <mesh position={[0, (-bedOuterH / 2 + TH) * SCALE, 0]} receiveShadow>
           <boxGeometry args={[truck.w * SCALE, TH * SCALE, truck.d * SCALE]} />
@@ -299,17 +312,51 @@ function CameraPreset({ controlsRef, target, offset = [2.4, 3.2, 8.5], onceKey }
   return null;
 }
 
-function FallingBox({ p, startY, delaySec, durationSec = 0.6, zOffsetCm = 0, yOffsetCm = 0, xOffsetCm = 0, worldOffset, onLand, freeze }) {
+/**
+ * ✅ FallingBox: replayToken이 바뀌면
+ * - tRef/doneRef/landedRef/seedRef를 초기화
+ * - 시작 위치로 즉시 되돌려서 "첫 프레임 파란 번쩍" 최소화
+ */
+function FallingBox({
+  p,
+  startY,
+  delaySec,
+  durationSec = 0.6,
+  zOffsetCm = 0,
+  yOffsetCm = 0,
+  xOffsetCm = 0,
+  worldOffset,
+  onLand,
+  freeze,
+  replayToken,
+}) {
   const meshRef = useRef();
   const tRef = useRef(0);
   const doneRef = useRef(false);
   const landedRef = useRef(false);
   const seedRef = useRef(null);
 
+  // ✅ 재생 신호 들어오면 애니메이션 리셋
+  useEffect(() => {
+    tRef.current = 0;
+    doneRef.current = false;
+    landedRef.current = false;
+    seedRef.current = null;
+
+    // 즉시 시작 위치로 세팅(리셋 순간 깜빡임 최소화)
+    if (meshRef.current) {
+      meshRef.current.position.set(
+        (worldOffset.x + xOffsetCm + p.pos.x) * SCALE,
+        startY * SCALE,
+        (worldOffset.z + p.pos.z + zOffsetCm) * SCALE
+      );
+      meshRef.current.rotation.set(0, 0, 0);
+    }
+  }, [replayToken, p.pos.x, p.pos.z, startY, zOffsetCm, xOffsetCm, worldOffset.x, worldOffset.z]);
+
   useEffect(() => {
     if (!meshRef.current) return;
     if (!seedRef.current) {
-      // 시각 효과용 랜덤 (배치/겹침과 무관)
       const sx = (Math.random() - 0.5) * 85;
       const sz = (Math.random() - 0.5) * 120;
       const rx = (Math.random() - 0.5) * 1.8;
@@ -326,7 +373,7 @@ function FallingBox({ p, startY, delaySec, durationSec = 0.6, zOffsetCm = 0, yOf
       (worldOffset.z + p.pos.z + zOffsetCm + seed.sz) * SCALE
     );
     meshRef.current.rotation.set(seed.rx, seed.ry, seed.rz);
-  }, [p.pos.x, p.pos.z, startY, zOffsetCm, xOffsetCm, worldOffset.x, worldOffset.z]);
+  }, [p.pos.x, p.pos.z, startY, zOffsetCm, xOffsetCm, worldOffset.x, worldOffset.z, replayToken]);
 
   useFrame((_, delta) => {
     if (freeze) return;
@@ -375,15 +422,21 @@ function FallingBox({ p, startY, delaySec, durationSec = 0.6, zOffsetCm = 0, yOf
 
   const colors = ["#e57373", "#81c784", "#64b5f6", "#ffd54f", "#ba68c8", "#4db6ac"];
   const overflowColor = "#ff5252";
-  const colorIndex = String(p.id).split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0) % colors.length;
+  const colorIndex =
+    String(p.id).split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0) %
+    colors.length;
 
-  const isBox = p._isBoxBundle || String(p.id).startsWith("box-") || String(p.name).includes("이사 박스");
+  const isBox =
+    p._isBoxBundle || String(p.id).startsWith("box-") || String(p.name).includes("이사 박스");
 
   return (
     <group>
       <mesh ref={meshRef} castShadow receiveShadow>
         <boxGeometry args={[p.w * SCALE, p.h * SCALE, p.d * SCALE]} />
-        <meshStandardMaterial color={p._overflow ? overflowColor : colors[colorIndex]} roughness={0.6} />
+        <meshStandardMaterial
+          color={p._overflow ? overflowColor : colors[colorIndex]}
+          roughness={0.6}
+        />
       </mesh>
 
       {!isBox && (
@@ -410,7 +463,7 @@ function FallingBox({ p, startY, delaySec, durationSec = 0.6, zOffsetCm = 0, yOf
   );
 }
 
-function TruckGroup({ tw, startY, freeze }) {
+function TruckGroup({ tw, startY, freeze, replayToken }) {
   const tr = tw.truck;
   const preset = tw.preset;
   const CAB_D = preset.cabD;
@@ -421,7 +474,6 @@ function TruckGroup({ tw, startY, freeze }) {
   const W_RADIUS = 14;
   const liftY = Math.max(0, W_RADIUS - localWheelY);
 
-  // 트럭 흔들림
   const groupRef = useRef();
   const shakeY = useRef(0);
   const shakeVelocity = useRef(0);
@@ -509,6 +561,7 @@ function TruckGroup({ tw, startY, freeze }) {
           worldOffset={{ x: 0, z: 0 }}
           onLand={handleLand}
           freeze={freeze}
+          replayToken={replayToken} // ✅ 리셋 신호 전달
         />
       ))}
     </group>
@@ -517,7 +570,7 @@ function TruckGroup({ tw, startY, freeze }) {
 
 /* 메인 */
 const TruckLoad3D = forwardRef(function TruckLoad3D(
-  { result, freeze = false, onReady },
+  { result, freeze = false, onReady, replayToken = 0 },
   ref
 ) {
   const controlsRef = useRef();
@@ -535,7 +588,6 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
     },
   }));
 
-  /* 서버에서 준 트럭 플랜(result.summary.truck_plan)으로 트럭 구성 */
   const trucks = useMemo(() => {
     const plan = result?.summary?.truck_plan ?? [];
     const expanded = [];
@@ -550,13 +602,9 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
           id: `${type}-${i}-${k}`,
           type,
           preset,
-
-          // 서버 치수
           w: Number(t?.inner_w_cm ?? 230),
           d: Number(t?.inner_d_cm ?? 620),
           h: Number(t?.inner_h_cm ?? 230),
-
-          // 서버가 준 적재/용량 정보(표시용)
           loadCbm: Number(t?.load_cbm ?? 0),
           capacityCbm: Number(t?.capacity_cbm ?? 0),
           loadPct: Number(t?.load_factor_pct ?? 0),
@@ -571,7 +619,6 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
 
   const maxTruckH = useMemo(() => Math.max(...trucks.map((t) => t.h)), [trucks]);
 
-  /* 서버에서 준 짐 리스트(result.rooms[].items[]) + 박스(result.summary.box/boxes_count) */
   const items = useMemo(() => {
     const roomItems = (result?.rooms ?? []).flatMap((r) => r.items ?? []);
     const boxSpec = result?.summary?.box;
@@ -589,7 +636,6 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
       can_stack_on_top: boxSpec?.can_stack_on_top ?? true,
     }));
 
-    // 기본은 "부피 큰 순" 휴리스틱
     return [...roomItems, ...boxItems]
       .map((it) => ({ ...it, _vol: itemCbm(it) }))
       .sort((a, b) => (b._vol ?? 0) - (a._vol ?? 0));
@@ -602,7 +648,6 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
 
     let overflowTotal = remainder.length;
 
-    // 동시에 와다다 + 약간 지터
     const JITTER_SEC = 0.12;
     const withJitter = (arr, keyPrefix) =>
       arr.map((p, idx) => ({ ...p, _delayJitter: hash01(`${keyPrefix}-${p.id}-${idx}`) * JITTER_SEC }));
@@ -613,14 +658,9 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
 
       const worldOffset = { x: (i - (trucks.length - 1) / 2) * GAP_TRUCK, z: 0 };
 
-      /* 여기서 "실제 3D 적재" 계산:
-         - bin-packing-3d 여러 번 시도
-         - 결과를 겹침 0으로 정리(겹치면 주변 탐색 -> 그래도 안되면 미적재 처리)
-      */
       const res = packWithBinPacking3D_MultiTry(buckets[i], tr, 9);
       const safePacked = res.packedPlacements;
 
-      // 미적재(overflow) 시각화: 트럭 옆에 배치(겹침 상관 없음)
       const overflowOriginX = tr.w + preset.bodyPaddingW + 60;
       const overflowOriginZ = preset.cabD + 20;
 
@@ -633,7 +673,6 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
         originY: 0,
       });
 
-      // overflowTotal은 "치수불가 remainder + (트럭에 못 넣은 unfitted)"
       overflowTotal += (res.unfittedItems?.length ?? 0);
 
       out.push({
@@ -648,7 +687,6 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
       });
     }
 
-    // 치수 자체가 어떤 트럭에도 안 들어가는(remainder) 항목들
     let globalRemainderPlacements = [];
     if (remainder.length && out[0]) {
       const tr0 = out[0].truck;
@@ -672,37 +710,73 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
     return { trucks: out, overflowTotal, globalRemainderPlacements };
   }, [items, trucks]);
 
-  // “초기 카메라 시점”
   const cameraTarget = useMemo(() => [-3, 1.2, 1.4], []);
   const startY = useMemo(() => maxTruckH + 10 + 220, [maxTruckH]);
 
   return (
     <div
       ref={wrapRef}
-      style={{ width: "100%", aspectRatio: "16 / 9", maxHeight: 320, minHeight: 220, borderRadius: 12, overflow: "hidden", background: "#81d4fa", position: "relative" }}
+      style={{
+        width: "100%",
+        aspectRatio: "16 / 9",
+        maxHeight: 320,
+        minHeight: 220,
+        borderRadius: 12,
+        overflow: "hidden",
+        background: "#E9EEF5", // 하늘색 번쩍 제거(중립)
+        position: "relative",
+      }}
     >
       {scene.overflowTotal > 0 && (
-        <div style={{ position: "absolute", top: 10, left: 10, zIndex: 2, background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: "6px 10px", fontSize: 12, fontWeight: 900, color: "#d32f2f", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+        <div
+          style={{
+            position: "absolute",
+            top: 10,
+            left: 10,
+            zIndex: 2,
+            background: "rgba(255,255,255,0.95)",
+            border: "1px solid rgba(0,0,0,0.08)",
+            borderRadius: 10,
+            padding: "6px 10px",
+            fontSize: 12,
+            fontWeight: 900,
+            color: "#d32f2f",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+          }}
+        >
           ⚠️ 트럭에 못 실은 짐(빨간색): {scene.overflowTotal}개
         </div>
       )}
 
-        <Canvas
-          shadows
-          gl={{ preserveDrawingBuffer: true }}
-          camera={{ fov: 40, near: 0.5, far: 4000, position: [30, 20, 30] }}
-          dpr={[1, 2]}
-          style={{ width: "100%", height: "100%", display: "block" }}
-          onCreated={() => {
-            // 첫 프레임 그릴 준비가 됐다는 신호(컨텍스트/캔버스 생성 완료)
-            onReady?.();
-          }}
-        >
-        <CameraPreset controlsRef={controlsRef} target={cameraTarget} offset={[2.4, 3.2, 8.5]} onceKey={`${result?.estimate_id ?? "x"}-${trucks.length}-v3-noOverlap`} />
+      <Canvas
+        shadows
+        gl={{ preserveDrawingBuffer: true, alpha: true }} // 투명
+        camera={{ fov: 40, near: 0.5, far: 4000, position: [30, 20, 30] }}
+        dpr={[1, 2]}
+        style={{ width: "100%", height: "100%", display: "block", background: "transparent" }}
+        onCreated={({ gl }) => {
+          // 캔버스 클리어를 투명으로(래퍼 배경이 자연스럽게 보이게)
+          gl.setClearColor(0x000000, 0);
+          onReady?.();
+        }}
+      >
+        <CameraPreset
+          controlsRef={controlsRef}
+          target={cameraTarget}
+          offset={[2.4, 3.2, 8.5]}
+          onceKey={`${result?.estimate_id ?? "x"}-${trucks.length}-v3-noOverlap`}
+        />
 
         <Sky sunPosition={[100, 50, 50]} turbidity={0.2} rayleigh={0.15} />
         <ambientLight intensity={0.8} />
-        <directionalLight position={[50, 150, 50]} intensity={1.8} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-bias={-0.0001} />
+        <directionalLight
+          position={[50, 150, 50]}
+          intensity={1.8}
+          castShadow
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-bias={-0.0001}
+        />
         <Environment preset="park" />
 
         <group scale={[SCALE, SCALE, SCALE]}>
@@ -710,14 +784,23 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
         </group>
 
         {scene.trucks.map((tw) => (
-          <TruckGroup key={tw.truck.id} tw={tw} startY={startY} freeze={freeze} />
+          <TruckGroup
+            key={tw.truck.id}
+            tw={tw}
+            startY={startY}
+            freeze={freeze}
+            replayToken={replayToken}
+          />
         ))}
 
         {scene.globalRemainderPlacements.length > 0 && scene.trucks[0] && (() => {
           const preset0 = scene.trucks[0].preset;
           const liftY = Math.max(0, 14 - Math.max(7, preset0.chassisH - 2));
           return (
-            <group position={[scene.trucks[0].worldOffset.x * SCALE, liftY * SCALE, scene.trucks[0].worldOffset.z * SCALE]} rotation={[0, -Math.PI / 2, 0]}>
+            <group
+              position={[scene.trucks[0].worldOffset.x * SCALE, liftY * SCALE, scene.trucks[0].worldOffset.z * SCALE]}
+              rotation={[0, -Math.PI / 2, 0]}
+            >
               {scene.globalRemainderPlacements.map((p, idx) => (
                 <FallingBox
                   key={`GLOBAL-${p.id}-${idx}`}
@@ -730,6 +813,7 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
                   xOffsetCm={preset0.bodyPaddingW / 2}
                   worldOffset={{ x: 0, z: 0 }}
                   freeze={freeze}
+                  replayToken={replayToken}
                 />
               ))}
             </group>
@@ -742,4 +826,5 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
     </div>
   );
 });
+
 export default TruckLoad3D;
