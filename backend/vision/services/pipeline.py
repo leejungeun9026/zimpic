@@ -172,10 +172,10 @@ def process_rooms_upload(
       ### 에어컨의 경우 실외기 데이터 가져오기 ###
       # 실외기 이름 정의 (벽걸이용/스탠드용)
       outdoor_name_en = None   
-      if yolo_id == 0 :   # 0 = air_conditioner_wall
-        outdoor_name_en = "ac_outdoor_wall"
-      elif yolo_id == 1 : # 1 = air_conditioner_stand
+      if yolo_id == 0 : # 1 = air_conditioner_stand
         outdoor_name_en = "ac_outdoor_stand"
+      elif yolo_id == 1 :   # 0 = air_conditioner_wall
+        outdoor_name_en = "ac_outdoor_wall"
       
       # 실외기 이름이 있으면 Furniture에서 실외기 정보 가져오기
       # 실외기는 yolo_id가 없으므로 yolo_id null중에서 가져옴

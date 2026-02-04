@@ -82,7 +82,7 @@ def build_truck_plan(
     )
 
   # 2) 박스 rule -> 박스 VirtualItem 추가
-  boxes_count = int(box_rule.boxes_avg)
+  boxes_count = int(box_rule.boxes_min)
   boxes_description = f"{estimate.area}평 기준, 이사 박스(5호) 평균 {boxes_count}개를 기준으로 계산했어요."
 
 
