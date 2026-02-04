@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import StepIndicator from "../components/layout/StepIndicator";
 import { useEstimateStore } from "../store/estimateStore";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import ResultSummaryBox from "../components/estimate/result/ResultSummaryBox";
 import SelectedInfoTable from "../components/estimate/result/SelectedInfoTable";
@@ -29,7 +29,13 @@ export default function ResultPage() {
 
   // 3d 이미지 저장
   const truck3dRef = useRef(null);
-  const [captureMode, setCaptureMode] = useState({ freeze: false, snapshotUrl: null });
+  const [freeze3d, setFreeze3d] = useState(false);
+  const [snapshotUrl, setSnapshotUrl] = useState(null);
+
+  const captureMode = useMemo(
+    () => ({ freeze: freeze3d, snapshotUrl }),
+    [freeze3d, snapshotUrl]
+  );
 
   // 요약정보 
   const summary = result?.summary ?? null;
@@ -210,36 +216,22 @@ export default function ResultPage() {
     };
   }, [thumbUrls]);
 
-  if (!result) {
-    return (
-      <div className="container-fluid my-4 text-center">
-        <p>결과 데이터가 없습니다.</p>
-        <button
-          className="btn btn-outline-primary"
-          onClick={() => navigate("/HomePage")}
-        >
-          처음으로
-        </button>
-      </div>
-    );
-  }
-
-  const handleSavePdf = async () => {
+  const handleSavePdf = useCallback(async () => {
     if (!pdfRef.current) return;
 
-    // freeze on
-    setCaptureMode({ freeze: true, snapshotUrl: null });
+    // 1) 3D 애니메이션/렌더를 멈추는 모드 ON (Canvas는 유지되어야 함)
+    setFreeze3d(true);
     await new Promise((r) => requestAnimationFrame(r));
 
-    // capture
+    // 2) 3D 캡쳐 (RoomItemsSummary 내부의 truck3dRef.current.capture 사용)
     const snap = truck3dRef.current?.capture?.() ?? null;
 
-    // swap to img
-    setCaptureMode({ freeze: true, snapshotUrl: snap });
+    // 3) 스냅샷 이미지를 오버레이로 보여주기 (Canvas를 없애면 안됨)
+    setSnapshotUrl(snap);
     await new Promise((r) => requestAnimationFrame(r));
     await new Promise((r) => requestAnimationFrame(r));
 
-    // html2canvas
+    // 4) html2canvas
     const canvas = await html2canvas(pdfRef.current, {
       scale: 2,
       backgroundColor: "#ffffff",
@@ -270,9 +262,25 @@ export default function ResultPage() {
 
     pdf.save("이사_견적서.pdf");
 
-    // restore
-    setCaptureMode({ freeze: false, snapshotUrl: null });
-  };
+    // 5) 복구
+    setSnapshotUrl(null);
+    setFreeze3d(false);
+  }, [pdfRef, truck3dRef]);
+
+
+  if (!result) {
+    return (
+      <div className="container-fluid my-4 text-center">
+        <p>결과 데이터가 없습니다.</p>
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => navigate("/HomePage")}
+        >
+          처음으로
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="container-fluid py-4">
