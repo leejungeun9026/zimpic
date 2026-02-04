@@ -7,11 +7,17 @@ import React, {
   useImperativeHandle,
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Html, Sky, ContactShadows, Environment } from "@react-three/drei";
+import {
+  OrbitControls,
+  Html,
+  Sky,
+  ContactShadows,
+  Environment,
+} from "@react-three/drei";
 
 import { SCALE, TRUCK_PRESET } from "./logic/truckPreset";
 import { toNumber, itemCbm, hash01 } from "./logic/packingUtils";
-import { simplePack, splitItemsByTruckLoad } from "./logic/simplePack";
+import { simplePack } from "./logic/simplePack"; // ✅ splitItemsByTruckLoad 제거
 import { packWithBinPacking3D_MultiTry } from "./logic/binPacking";
 
 /* 환경/비주얼 컴포넌트 */
@@ -130,25 +136,41 @@ function ResidentialEnvironment() {
         <meshStandardMaterial color="#78909c" roughness={0.9} />
       </mesh>
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 10, -800]} receiveShadow>
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 10, -800]}
+        receiveShadow
+      >
         <planeGeometry args={[5000, 400]} />
         <meshStandardMaterial color="#e0e0e0" roughness={0.8} />
       </mesh>
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 10, -610]} receiveShadow>
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 10, -610]}
+        receiveShadow
+      >
         <boxGeometry args={[5000, 20, 15]} />
         <meshStandardMaterial color="#bdbdbd" />
       </mesh>
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -5, -2000]} receiveShadow>
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, -5, -2000]}
+        receiveShadow
+      >
         <planeGeometry args={[5000, 2000]} />
         <meshStandardMaterial color="#a5d6a7" roughness={1} />
       </mesh>
 
       <group position={[0, 0, -1100]}>
         <House position={[0, 0, 0]} />
-        <group position={[-1600, 0, 0]}><House position={[0, 0, 0]} /></group>
-        <group position={[1600, 0, 0]}><House position={[0, 0, 0]} /></group>
+        <group position={[-1600, 0, 0]}>
+          <House position={[0, 0, 0]} />
+        </group>
+        <group position={[1600, 0, 0]}>
+          <House position={[0, 0, 0]} />
+        </group>
       </group>
 
       <group position={[0, 0, -950]}>
@@ -167,24 +189,39 @@ function ResidentialEnvironment() {
 
 function Wheel({ x, y, z, r = 14, w = 10 }) {
   return (
-    <group position={[x * SCALE, y * SCALE, z * SCALE]} rotation={[0, 0, Math.PI / 2]}>
+    <group
+      position={[x * SCALE, y * SCALE, z * SCALE]}
+      rotation={[0, 0, Math.PI / 2]}
+    >
       <mesh castShadow receiveShadow>
         <cylinderGeometry args={[r * SCALE, r * SCALE, w * SCALE, 32]} />
         <meshStandardMaterial color="#333" roughness={0.9} />
       </mesh>
       <mesh position={[0, 0.5 * SCALE, 0]}>
-        <cylinderGeometry args={[r * 0.6 * SCALE, r * 0.6 * SCALE, w * 1.05 * SCALE, 16]} />
+        <cylinderGeometry
+          args={[r * 0.6 * SCALE, r * 0.6 * SCALE, w * 1.05 * SCALE, 16]}
+        />
         <meshStandardMaterial color="#ddd" metalness={0.6} roughness={0.2} />
       </mesh>
       <mesh position={[0, 0.8 * SCALE, 0]}>
-        <cylinderGeometry args={[r * 0.15 * SCALE, r * 0.15 * SCALE, w * 1.2 * SCALE, 8]} />
+        <cylinderGeometry
+          args={[r * 0.15 * SCALE, r * 0.15 * SCALE, w * 1.2 * SCALE, 8]}
+        />
         <meshStandardMaterial color="#888" />
       </mesh>
     </group>
   );
 }
 
-function TruckShell({ truck, cabD, chassisH, bodyPaddingW, bodyPaddingD, bodyPaddingH, worldOffset }) {
+function TruckShell({
+  truck,
+  cabD,
+  chassisH,
+  bodyPaddingW,
+  bodyPaddingD,
+  bodyPaddingH,
+  worldOffset,
+}) {
   const TH = 2;
   const bedOuterW = truck.w + bodyPaddingW;
   const bedOuterD = truck.d + bodyPaddingD;
@@ -199,12 +236,21 @@ function TruckShell({ truck, cabD, chassisH, bodyPaddingW, bodyPaddingD, bodyPad
 
   return (
     <group position={[worldOffset.x * SCALE, 0, worldOffset.z * SCALE]}>
-      <mesh position={[centerX * SCALE, (chassisH / 2) * SCALE, chassisZ * SCALE]} receiveShadow>
+      <mesh
+        position={[centerX * SCALE, (chassisH / 2) * SCALE, chassisZ * SCALE]}
+        receiveShadow
+      >
         <boxGeometry args={[bedOuterW * SCALE, chassisH * SCALE, totalD * SCALE]} />
         <meshStandardMaterial color="#2c3e50" roughness={0.8} />
       </mesh>
 
-      <group position={[centerX * SCALE, (chassisH + cabH / 2) * SCALE, cabZ * SCALE]}>
+      <group
+        position={[
+          centerX * SCALE,
+          (chassisH + cabH / 2) * SCALE,
+          cabZ * SCALE,
+        ]}
+      >
         <mesh castShadow>
           <boxGeometry args={[cabW * SCALE, cabH * SCALE, cabD * SCALE]} />
           <meshStandardMaterial color="#ffffff" roughness={0.2} />
@@ -217,19 +263,51 @@ function TruckShell({ truck, cabD, chassisH, bodyPaddingW, bodyPaddingD, bodyPad
           <boxGeometry args={[cabW * 0.7 * SCALE, cabH * 0.2 * SCALE, 2 * SCALE]} />
           <meshStandardMaterial color="#111" />
         </mesh>
-        <mesh position={[-cabW * 0.35 * SCALE, -cabH * 0.35 * SCALE, -cabD * 0.52 * SCALE]}>
+        <mesh
+          position={[
+            -cabW * 0.35 * SCALE,
+            -cabH * 0.35 * SCALE,
+            -cabD * 0.52 * SCALE,
+          ]}
+        >
           <boxGeometry args={[cabW * 0.12 * SCALE, cabH * 0.08 * SCALE, 4 * SCALE]} />
-          <meshStandardMaterial color="#f1c40f" emissive="#f1c40f" emissiveIntensity={0.5} />
+          <meshStandardMaterial
+            color="#f1c40f"
+            emissive="#f1c40f"
+            emissiveIntensity={0.5}
+          />
         </mesh>
-        <mesh position={[cabW * 0.35 * SCALE, -cabH * 0.35 * SCALE, -cabD * 0.52 * SCALE]}>
+        <mesh
+          position={[
+            cabW * 0.35 * SCALE,
+            -cabH * 0.35 * SCALE,
+            -cabD * 0.52 * SCALE,
+          ]}
+        >
           <boxGeometry args={[cabW * 0.12 * SCALE, cabH * 0.08 * SCALE, 4 * SCALE]} />
-          <meshStandardMaterial color="#f1c40f" emissive="#f1c40f" emissiveIntensity={0.5} />
+          <meshStandardMaterial
+            color="#f1c40f"
+            emissive="#f1c40f"
+            emissiveIntensity={0.5}
+          />
         </mesh>
-        <mesh position={[-cabW * 0.52 * SCALE, cabH * 0.1 * SCALE, -cabD * 0.3 * SCALE]}>
+        <mesh
+          position={[
+            -cabW * 0.52 * SCALE,
+            cabH * 0.1 * SCALE,
+            -cabD * 0.3 * SCALE,
+          ]}
+        >
           <boxGeometry args={[4 * SCALE, cabH * 0.2 * SCALE, 8 * SCALE]} />
           <meshStandardMaterial color="#333" />
         </mesh>
-        <mesh position={[cabW * 0.52 * SCALE, cabH * 0.1 * SCALE, -cabD * 0.3 * SCALE]}>
+        <mesh
+          position={[
+            cabW * 0.52 * SCALE,
+            cabH * 0.1 * SCALE,
+            -cabD * 0.3 * SCALE,
+          ]}
+        >
           <boxGeometry args={[4 * SCALE, cabH * 0.2 * SCALE, 8 * SCALE]} />
           <meshStandardMaterial color="#333" />
         </mesh>
@@ -240,7 +318,13 @@ function TruckShell({ truck, cabD, chassisH, bodyPaddingW, bodyPaddingD, bodyPad
         <meshStandardMaterial color="#95a5a6" metalness={0.5} />
       </mesh>
 
-      <group position={[centerX * SCALE, (chassisH + bedOuterH / 2) * SCALE, bedZ * SCALE]}>
+      <group
+        position={[
+          centerX * SCALE,
+          (chassisH + bedOuterH / 2) * SCALE,
+          bedZ * SCALE,
+        ]}
+      >
         <mesh castShadow>
           <boxGeometry args={[bedOuterW * SCALE, bedOuterH * SCALE, bedOuterD * SCALE]} />
           <meshStandardMaterial
@@ -312,11 +396,6 @@ function CameraPreset({ controlsRef, target, offset = [2.4, 3.2, 8.5], onceKey }
   return null;
 }
 
-/**
- * ✅ FallingBox: replayToken이 바뀌면
- * - tRef/doneRef/landedRef/seedRef를 초기화
- * - 시작 위치로 즉시 되돌려서 "첫 프레임 파란 번쩍" 최소화
- */
 function FallingBox({
   p,
   startY,
@@ -336,14 +415,12 @@ function FallingBox({
   const landedRef = useRef(false);
   const seedRef = useRef(null);
 
-  // ✅ 재생 신호 들어오면 애니메이션 리셋
   useEffect(() => {
     tRef.current = 0;
     doneRef.current = false;
     landedRef.current = false;
     seedRef.current = null;
 
-    // 즉시 시작 위치로 세팅(리셋 순간 깜빡임 최소화)
     if (meshRef.current) {
       meshRef.current.position.set(
         (worldOffset.x + xOffsetCm + p.pos.x) * SCALE,
@@ -352,7 +429,16 @@ function FallingBox({
       );
       meshRef.current.rotation.set(0, 0, 0);
     }
-  }, [replayToken, p.pos.x, p.pos.z, startY, zOffsetCm, xOffsetCm, worldOffset.x, worldOffset.z]);
+  }, [
+    replayToken,
+    p.pos.x,
+    p.pos.z,
+    startY,
+    zOffsetCm,
+    xOffsetCm,
+    worldOffset.x,
+    worldOffset.z,
+  ]);
 
   useEffect(() => {
     if (!meshRef.current) return;
@@ -544,7 +630,10 @@ function TruckGroup({ tw, startY, freeze, replayToken }) {
         >
           <span style={{ opacity: 0.75 }}>{preset.label}</span>
           <span>적재율 {pct}%</span>
-          {tw.overflowCount > 0 && <span style={{ opacity: 0.9 }}>⚠ 미적재 : {tw.overflowCount}</span>}
+          {/* ✅ 순차 적재에서는 "트럭별 미적재" 대신, 다음 트럭으로 넘어갈 예정 개수 표시(선택) */}
+          {tw.carryCount > 0 && (
+            <span style={{ opacity: 0.9 }}></span>
+          )}
         </div>
       </Html>
 
@@ -561,7 +650,7 @@ function TruckGroup({ tw, startY, freeze, replayToken }) {
           worldOffset={{ x: 0, z: 0 }}
           onLand={handleLand}
           freeze={freeze}
-          replayToken={replayToken} // ✅ 리셋 신호 전달
+          replayToken={replayToken}
         />
       ))}
     </group>
@@ -614,7 +703,19 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
 
     return expanded.length
       ? expanded
-      : [{ id: "5T-0-0", type: "5T", preset: TRUCK_PRESET["5T"], w: 230, d: 620, h: 230, loadCbm: 0, capacityCbm: 0, loadPct: 0 }];
+      : [
+          {
+            id: "5T-0-0",
+            type: "5T",
+            preset: TRUCK_PRESET["5T"],
+            w: 230,
+            d: 620,
+            h: 230,
+            loadCbm: 0,
+            capacityCbm: 0,
+            loadPct: 0,
+          },
+        ];
   }, [result]);
 
   const maxTruckH = useMemo(() => Math.max(...trucks.map((t) => t.h)), [trucks]);
@@ -624,78 +725,100 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
     const boxSpec = result?.summary?.box;
     const boxCount = Number(result?.summary?.boxes_count ?? 0);
 
-    const boxItems = Array(boxCount).fill(0).map((_, i) => ({
-      item_id: `box-${i}`,
-      furniture_id: boxSpec?.furniture_id,
-      name_kr: "이사 박스 5호",
-      packed_w_cm: boxSpec?.packed_w_cm,
-      packed_d_cm: boxSpec?.packed_d_cm,
-      packed_h_cm: boxSpec?.packed_h_cm,
-      allowed_rotations: boxSpec?.allowed_rotations || ["WDH", "DWH"],
-      stackable: boxSpec?.stackable ?? true,
-      can_stack_on_top: boxSpec?.can_stack_on_top ?? true,
-    }));
+    const boxItems = Array(boxCount)
+      .fill(0)
+      .map((_, i) => ({
+        item_id: `box-${i}`,
+        furniture_id: boxSpec?.furniture_id,
+        name_kr: "이사 박스 5호",
+        packed_w_cm: boxSpec?.packed_w_cm,
+        packed_d_cm: boxSpec?.packed_d_cm,
+        packed_h_cm: boxSpec?.packed_h_cm,
+        allowed_rotations: boxSpec?.allowed_rotations || ["WDH", "DWH"],
+        stackable: boxSpec?.stackable ?? true,
+        can_stack_on_top: boxSpec?.can_stack_on_top ?? true,
+      }));
 
     return [...roomItems, ...boxItems]
       .map((it) => ({ ...it, _vol: itemCbm(it) }))
       .sort((a, b) => (b._vol ?? 0) - (a._vol ?? 0));
   }, [result]);
 
+  /**
+   * ✅ 순차 적재 scene
+   * - remaining(items)을 1번 트럭부터 넣어봄
+   * - 못 들어간건 다음 트럭으로 넘김
+   * - 마지막까지 남은 것만 "진짜 미적재(빨강)"로 표시
+   */
   const scene = useMemo(() => {
-    const { buckets, remainder } = splitItemsByTruckLoad(items, trucks);
     const GAP_TRUCK = 850;
     const out = [];
 
-    let overflowTotal = remainder.length;
+    // 필요하면 "큰 트럭 먼저"로 정렬할 수 있는데,
+    // 화면에 표시 순서도 바뀌니까 일단 입력 순서 유지
+    const tryOrder = trucks;
+
+    let remaining = items;
 
     const JITTER_SEC = 0.12;
     const withJitter = (arr, keyPrefix) =>
-      arr.map((p, idx) => ({ ...p, _delayJitter: hash01(`${keyPrefix}-${p.id}-${idx}`) * JITTER_SEC }));
+      (arr ?? []).map((p, idx) => ({
+        ...p,
+        _delayJitter: hash01(`${keyPrefix}-${p.id}-${idx}`) * JITTER_SEC,
+      }));
 
-    for (let i = 0; i < trucks.length; i++) {
-      const tr = trucks[i];
+    for (let i = 0; i < tryOrder.length; i++) {
+      const tr = tryOrder[i];
       const preset = tr.preset;
 
-      const worldOffset = { x: (i - (trucks.length - 1) / 2) * GAP_TRUCK, z: 0 };
+      const worldOffset = {
+        x: (i - (tryOrder.length - 1) / 2) * GAP_TRUCK,
+        z: 0,
+      };
 
-      const res = packWithBinPacking3D_MultiTry(buckets[i], tr, 9);
-      const safePacked = res.packedPlacements;
+      // 이번 트럭에 remaining 전부 넣어보기
+      const res = packWithBinPacking3D_MultiTry(remaining, tr, 9);
+      const safePacked = res.packedPlacements ?? [];
+      const nextRemaining = res.unfittedItems ?? [];
 
-      const overflowOriginX = tr.w + preset.bodyPaddingW + 60;
-      const overflowOriginZ = preset.cabD + 20;
-
-      const overflowPlacements = simplePack(res.unfittedItems ?? [], tr, {
-        overflow: true,
-        respectBounds: false,
-        gap: 8,
-        originX: overflowOriginX,
-        originZ: overflowOriginZ,
-        originY: 0,
-      });
-
-      overflowTotal += (res.unfittedItems?.length ?? 0);
+      console.log(
+  "[SEQ PACK]",
+  tr.id,
+  tr.type,
+  "packed:",
+  safePacked.length,
+  "unfitted:",
+  nextRemaining.length,
+  nextRemaining.map(it => ({
+    name: it.name,
+    w: it.w,
+    d: it.d,
+    h: it.h,
+    rot: it.allowed_rotations
+  }))
+);
 
       out.push({
         truck: tr,
         preset,
         worldOffset,
-        placements: [
-          ...withJitter(safePacked, `TRUCK-${tr.id}-IN`),
-          ...withJitter(overflowPlacements, `TRUCK-${tr.id}-OF`),
-        ],
-        overflowCount: res.unfittedItems?.length ?? 0,
+        placements: withJitter(safePacked, `TRUCK-${tr.id}-IN`),
+        carryCount: nextRemaining.length, // 다음 트럭으로 넘어갈 개수(표시용)
       });
+
+      remaining = nextRemaining;
     }
 
+    // 최종 미적재(빨강)만 따로 한쪽에 쌓아 보여주기
     let globalRemainderPlacements = [];
-    if (remainder.length && out[0]) {
+    if (remaining.length && out[0]) {
       const tr0 = out[0].truck;
       const preset0 = out[0].preset;
 
       const overflowOriginX = tr0.w + preset0.bodyPaddingW + 60;
       const overflowOriginZ = preset0.cabD + 360;
 
-      globalRemainderPlacements = simplePack(remainder, tr0, {
+      globalRemainderPlacements = simplePack(remaining, tr0, {
         overflow: true,
         respectBounds: false,
         gap: 10,
@@ -703,11 +826,18 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
         originZ: overflowOriginZ,
         originY: 0,
       })
-        .map((p) => ({ ...p, name: `치수불가: ${p.name}` }))
-        .map((p, idx) => ({ ...p, _delayJitter: hash01(`GLOBAL-${p.id}-${idx}`) * JITTER_SEC }));
+        .map((p) => ({ ...p, name: `미적재: ${p.name}` }))
+        .map((p, idx) => ({
+          ...p,
+          _delayJitter: hash01(`GLOBAL-${p.id}-${idx}`) * JITTER_SEC,
+        }));
     }
 
-    return { trucks: out, overflowTotal, globalRemainderPlacements };
+    return {
+      trucks: out,
+      overflowTotal: remaining.length,
+      globalRemainderPlacements,
+    };
   }, [items, trucks]);
 
   const cameraTarget = useMemo(() => [-3, 1.2, 1.4], []);
@@ -723,7 +853,7 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
         minHeight: 220,
         borderRadius: 12,
         overflow: "hidden",
-        background: "#E9EEF5", // 하늘색 번쩍 제거(중립)
+        background: "#E9EEF5",
         position: "relative",
       }}
     >
@@ -744,18 +874,22 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
             boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
           }}
         >
-          ⚠️ 트럭에 못 실은 짐(빨간색): {scene.overflowTotal}개
+          ⚠️ 최종 미적재(빨간색): {scene.overflowTotal}개
         </div>
       )}
 
       <Canvas
         shadows
-        gl={{ preserveDrawingBuffer: true, alpha: true }} // 투명
+        gl={{ preserveDrawingBuffer: true, alpha: true }}
         camera={{ fov: 40, near: 0.5, far: 4000, position: [30, 20, 30] }}
         dpr={[1, 2]}
-        style={{ width: "100%", height: "100%", display: "block", background: "transparent" }}
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "block",
+          background: "transparent",
+        }}
         onCreated={({ gl }) => {
-          // 캔버스 클리어를 투명으로(래퍼 배경이 자연스럽게 보이게)
           gl.setClearColor(0x000000, 0);
           onReady?.();
         }}
@@ -764,7 +898,7 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
           controlsRef={controlsRef}
           target={cameraTarget}
           offset={[2.4, 3.2, 8.5]}
-          onceKey={`${result?.estimate_id ?? "x"}-${trucks.length}-v3-noOverlap`}
+          onceKey={`${result?.estimate_id ?? "x"}-${trucks.length}-seqPack-v1`}
         />
 
         <Sky sunPosition={[100, 50, 50]} turbidity={0.2} rayleigh={0.15} />
@@ -793,35 +927,53 @@ const TruckLoad3D = forwardRef(function TruckLoad3D(
           />
         ))}
 
-        {scene.globalRemainderPlacements.length > 0 && scene.trucks[0] && (() => {
-          const preset0 = scene.trucks[0].preset;
-          const liftY = Math.max(0, 14 - Math.max(7, preset0.chassisH - 2));
-          return (
-            <group
-              position={[scene.trucks[0].worldOffset.x * SCALE, liftY * SCALE, scene.trucks[0].worldOffset.z * SCALE]}
-              rotation={[0, -Math.PI / 2, 0]}
-            >
-              {scene.globalRemainderPlacements.map((p, idx) => (
-                <FallingBox
-                  key={`GLOBAL-${p.id}-${idx}`}
-                  p={p}
-                  startY={startY}
-                  delaySec={0.2 + (p._delayJitter ?? 0)}
-                  durationSec={0.5}
-                  zOffsetCm={preset0.cabD}
-                  yOffsetCm={preset0.chassisH}
-                  xOffsetCm={preset0.bodyPaddingW / 2}
-                  worldOffset={{ x: 0, z: 0 }}
-                  freeze={freeze}
-                  replayToken={replayToken}
-                />
-              ))}
-            </group>
-          );
-        })()}
+        {scene.globalRemainderPlacements.length > 0 &&
+          scene.trucks[0] &&
+          (() => {
+            const preset0 = scene.trucks[0].preset;
+            const liftY = Math.max(0, 14 - Math.max(7, preset0.chassisH - 2));
+            return (
+              <group
+                position={[
+                  scene.trucks[0].worldOffset.x * SCALE,
+                  liftY * SCALE,
+                  scene.trucks[0].worldOffset.z * SCALE,
+                ]}
+                rotation={[0, -Math.PI / 2, 0]}
+              >
+                {scene.globalRemainderPlacements.map((p, idx) => (
+                  <FallingBox
+                    key={`GLOBAL-${p.id}-${idx}`}
+                    p={p}
+                    startY={startY}
+                    delaySec={0.2 + (p._delayJitter ?? 0)}
+                    durationSec={0.5}
+                    zOffsetCm={preset0.cabD}
+                    yOffsetCm={preset0.chassisH}
+                    xOffsetCm={preset0.bodyPaddingW / 2}
+                    worldOffset={{ x: 0, z: 0 }}
+                    freeze={freeze}
+                    replayToken={replayToken}
+                  />
+                ))}
+              </group>
+            );
+          })()}
 
-        <ContactShadows position={[0, 0.1, 0]} opacity={0.6} scale={100} blur={2} far={4} color="#000" />
-        <OrbitControls ref={controlsRef} makeDefault minPolarAngle={0} maxPolarAngle={Math.PI / 2.05} />
+        <ContactShadows
+          position={[0, 0.1, 0]}
+          opacity={0.6}
+          scale={100}
+          blur={2}
+          far={4}
+          color="#000"
+        />
+        <OrbitControls
+          ref={controlsRef}
+          makeDefault
+          minPolarAngle={0}
+          maxPolarAngle={Math.PI / 2.05}
+        />
       </Canvas>
     </div>
   );
